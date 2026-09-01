@@ -1,3 +1,15 @@
+# PilotLog v9.2 — UI responsiveness / Logbook performance
+
+- Removed a second large-backup bottleneck in Logbook rendering.
+- Credit Hours for displayed Logbook rows now reuse a per-day context instead of re-reading and copying the full operational database for every row.
+- Logbook statistics use one date index per render rather than repeatedly scanning the multi-year archive.
+- Trips list rendering is lazy and no longer creates hidden DOM during app startup.
+- Faster direct lookup when returning to a specific Logbook entry.
+- Logbook DOM is bounded to 400 entries initially; older entries remain available in 400-entry batches while search/statistics continue to use the full database.
+- No visual redesign and no changes to stored data, database schema, Payroll, Credit Hours rules, Roster, Trips calculations, Expiry, or sync behavior.
+
+---
+
 # PilotLog v9.1 — Large-backup restore performance fix
 
 - Fixed the freeze/unresponsive state triggered after restoring a large v8.9 Full Backup into v9.0.

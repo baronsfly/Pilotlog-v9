@@ -1,4 +1,4 @@
-PILOTLOG v9.1 — SINGLE AUTHORITATIVE DATABASE
+PILOTLOG v9.2 — SINGLE AUTHORITATIVE DATABASE
 ================================================
 
 BASE
@@ -50,9 +50,9 @@ VISUAL PRESERVATION
 FILES
 -----
 - index.html
-- pilotlog-9.1.js
+- pilotlog-9.2.js
 - pilotlog-8.3.0.css
-- sw-9.1.js
+- sw-9.2.js
 - sw-8.9.js (cache upgrade bridge only)
 - manifest.webmanifest
 - README_v9.txt
@@ -65,3 +65,13 @@ v9.1 RESTORE PERFORMANCE FIX
 - Trip operational entries are built once and reused while rendering the Trips list instead of rebuilding the full multi-year operational history for every saved trip.
 - Added indexed trip-entry lookup for saved trip contents.
 - No UI, payroll, credit-hour, roster, logbook, trip, expiry, sync, or business-rule formula was changed.
+
+
+v9.2 UI PERFORMANCE FIX
+-----------------------
+- Logbook Credit display no longer rebuilds the complete 7,000+ entry archive for every visible row.
+- Logbook statistics now group entries by date once, preserving the same Credit Hours rules while avoiding repeated full-database scans.
+- Trips DOM is rendered only when the Trips page is opened, instead of being built invisibly during startup.
+- Logbook anchor lookup no longer scans every rendered row.
+- Logbook initially renders 400 entries at a time, with an explicit Load older entries control; search still runs against the full authoritative database and statistics still cover all matches.
+- No data schema, business rule, Payroll formula, Credit Hours rule, Roster logic, Trips formula, Expiry logic or visual layout was changed.
