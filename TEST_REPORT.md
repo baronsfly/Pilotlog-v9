@@ -1,44 +1,31 @@
-# PilotLog 9.0 RC1 — test report
+# PilotLog 9.0 RC4 — actual backup regression test
 
-## Static
-- Bundled JavaScript: Node syntax check passed.
-- All seven primary views exist in the deployment HTML.
-- Default view: Totals.
-- No PilotLog 8.9 JS/CSS source file is included in the deployment build.
+Test input: `pilotlog_backup_2026-09-01.json` exported by PilotLog 8.9.
 
-## Browser navigation
-Tested in Chromium by injecting the self-contained deployment HTML into a clean page:
-- Totals -> Roster: PASS
-- Roster -> Logbook: PASS
-- Logbook -> Payroll: PASS
-- Payroll -> Expiry: PASS
-- Expiry -> Trips: PASS
-- Trips -> Totals: PASS
-- Totals -> Settings: PASS
-- Exactly one active view after every navigation: PASS
-- Navigation active-state follows the selected view: PASS
-- JavaScript exception events during navigation: 0
+## Automated assertions passed
+- JavaScript syntax: PASS
+- Main navigation targets present: Roster / Logbook / Payroll / Expiry / Trips / Totals / Settings: PASS
+- v8 legacy rows retained: 7,924 / 7,924
+- Roster sectors linked to existing authoritative Flights with v8.9 identity: 29
+- Genuinely unmatched Roster sectors added as planned: 19
+- Unified activities: 7,960
+- Unified activity IDs duplicated: 0
+- Trips: 168 / 168
+- Expiry input: 36
+- Expiry semantic duplicates merged: 6
+- Expiry output: 30
+- Active local draft retained: 1
+- Historical Flight total: 939,782 minutes before / 939,782 after
 
-## UI
-- 390 x 844 mobile viewport rendered successfully.
-- Left-side navigation rail and professional light PilotLog layout restored to the v8.9 visual direction.
-- Today Duty, Next Duties and Total Statistics visible on Totals.
+## Payroll regression
+- August 2026 operational source: 36 entries
+- August 2026 Credit H: 6,420 min = **107:00**
+- 31 August sectors: 2
+- MAC111 Credit H: 3:30
+- MAC112 Credit H: 3:30
+- August total before final MAC112: 103:30
+- September 2026 Credit H: 6,135 min = 102:15
 
-## Logic
-Existing PilotLog 9 logic test suite:
-- AeroLINE September 2026: 38 activities parsed
-  - FLIGHT 18
-  - SIM 5
-  - DHD 1
-  - DHP 2
-  - STBY 1
-  - GROUND 3
-  - OFF 8
-- Complete LogTen package test: PASS
-- Credit calculation test: PASS
+Result: ALL ASSERTIONS PASS.
 
-## Deployment hardening
-The earlier prototype depended on a `src/` folder. This RC does not:
-- application CSS is inline
-- application JavaScript is bundled inline
-- no local module import is required for page navigation
+The migration/payroll assertions execute the actual RC4 `Rules` and `Importers` modules extracted from the release `index.html` against the supplied real v8.9 backup.

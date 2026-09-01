@@ -1,1 +1,10 @@
-{"name":"PilotLog","short_name":"PilotLog","start_url":"./","display":"standalone","background_color":"#f4f7fb","theme_color":"#ffffff","icons":[]}
+{
+  "name": "PilotLog 9",
+  "short_name": "PilotLog",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f4f7fb",
+  "theme_color": "#ffffff",
+  "description": "PilotLog 9 — unified operational logbook, roster, payroll and trips"
+}

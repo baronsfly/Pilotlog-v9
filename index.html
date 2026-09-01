@@ -68,7 +68,7 @@ input,select,textarea{width:100%;border:1px solid var(--line2);border-radius:10p
         <p id="appTagline">PilotLog — your personal LogBook</p>
       </div>
     </div>
-    <span class="version">v9.0</span>
+    <span class="version">v9.0 RC4</span>
   </div>
 </header>
 
@@ -498,8 +498,8 @@ function activityCreditMinutes(a,all=[],pay=PAY_DEFAULTS){
   if(a.type===TYPES.STBY)return duration(a.credit);
   return duration(a.credit);
 }
-function actualBlockMinutes(a){return a?.type===TYPES.FLIGHT?span(a.out,a.in):0}
-function airborneMinutes(a){return a?.type===TYPES.FLIGHT?span(a.off,a.on):0}
+function actualBlockMinutes(a){if(a?.type!==TYPES.FLIGHT)return 0;return duration(a.block)||span(a.out,a.in)||duration(a.flight)||0}
+function airborneMinutes(a){if(a?.type!==TYPES.FLIGHT)return 0;return duration(a.flight)||span(a.off,a.on)||0}
 function simulatorMinutes(a){if(a?.type!==TYPES.SIM)return 0;return duration(a.simulatorTime)||span(a.report||a.schedOut,a.release||a.schedIn)}
 function picMinutes(a){return a?.type===TYPES.FLIGHT&&a.role==='PIC'?actualBlockMinutes(a):0}
 function sicMinutes(a){return a?.type===TYPES.FLIGHT&&a.role==='SIC'?actualBlockMinutes(a):0}
@@ -528,10 +528,27 @@ const FDP_ROWS=[
 [360,809,[780,750,720,690,660,630,600,570,540]],[810,839,[765,735,705,675,645,615,585,555,540]],[840,869,[750,720,690,660,630,600,570,540,540]],[870,899,[735,705,675,645,615,585,555,540,540]],[900,929,[720,690,660,630,600,570,540,540,540]],[930,959,[705,675,645,615,585,555,540,540,540]],[960,989,[690,660,630,600,570,540,540,540,540]],[990,1019,[675,645,615,585,555,540,540,540,540]],[1020,1439,[660,630,600,570,540,540,540,540,540]],[0,299,[660,630,600,570,540,540,540,540,540]],[300,314,[720,690,660,630,600,570,540,540,540]],[315,329,[735,705,675,645,615,585,555,540,540]],[330,344,[750,720,690,660,630,600,570,540,540]],[345,359,[765,735,705,675,645,615,585,555,540]]];
 function fdpLimit(localReportMinutes,sectors){const row=FDP_ROWS.find(r=>localReportMinutes>=r[0]&&localReportMinutes<=r[1]);return row?row[2][Math.max(1,Math.min(9,sectors))-1]:0}
 
+function rosterMonthAvailable(activities,month){return (activities||[]).some(a=>a.status!=='DELETED'&&monthKey(a.date)===month&&a.roster?.planned)}
+function operationalEntriesForMonth(activities,month){
+  const all=(activities||[]).filter(a=>a.status!=='DELETED'&&monthKey(a.date)===month&&a.type!==TYPES.OFF);
+  if(rosterMonthAvailable(all,month)){
+    // Mirror v8.9 source priority using the single v9 activity store:
+    // roster-linked FLIGHT records are authoritative for the month; non-flight
+    // AeroLINE/manual activities remain available, while duplicate LogTen rows are excluded.
+    return all.filter(a=>(a.type===TYPES.FLIGHT&&a.roster?.planned)||(a.type!==TYPES.FLIGHT&&String(a.source||'').toLowerCase()!=='logten'));
+  }
+  const logten=all.filter(a=>String(a.source||'').toLowerCase()==='logten');
+  return logten.length?logten:all.filter(a=>!a.roster?.planned);
+}
+function operationalEntriesForTrips(activities){
+  const months=[...new Set((activities||[]).filter(a=>a.status!=='DELETED'&&a.date).map(a=>monthKey(a.date)))].sort(),out=[];
+  for(const month of months)out.push(...operationalEntriesForMonth(activities,month));
+  const seen=new Set();return out.filter(a=>{const k=a.id||[a.date,a.type,a.flightNo,a.dep,a.arr,a.schedOut,a.report].join('|');if(seen.has(k))return false;seen.add(k);return true});
+}
 function payrollForMonth(activities,trips,month,pay=PAY_DEFAULTS,extras={}){
-  const acts=(activities||[]).filter(a=>a.status!=='DELETED'&&monthKey(a.date)===month);
-  const creditMins=acts.reduce((n,a)=>n+activityCreditMinutes(a,activities,pay),0);
-  const nf=acts.filter(a=>a.type!==TYPES.FLIGHT&&activityCreditMinutes(a,activities,pay)>0);
+  const acts=operationalEntriesForMonth(activities,month);
+  const creditMins=acts.reduce((n,a)=>n+activityCreditMinutes(a,acts,pay),0);
+  const nf=acts.filter(a=>a.type!==TYPES.FLIGHT&&activityCreditMinutes(a,acts,pay)>0);
   const training=acts.filter(isTrainingPaySector);
   const dayOffDates=[...new Set(acts.filter(a=>a.callFromDayOff&&a.status==='COMPLETED').map(a=>a.date))];
   const simCount=acts.filter(a=>a.type===TYPES.SIM&&isCompleted(a)).length;
@@ -542,11 +559,12 @@ function payrollForMonth(activities,trips,month,pay=PAY_DEFAULTS,extras={}){
   const fixed=['base','allowance','transport','pos','telephone','uniform','meal','deduction'].reduce((n,k)=>n+Number(pay[k]||0),0)+seniority;
   const creditPay=tierPay(creditMins/60,pay),trainingPay=training.length*Number(pay.trainingRate||0),simPay=simCount*Number(pay.simAllowance||0),dayOffPay=dayOffDates.length*Number(pay.dayOffRate||0);
   const arrears=Number(extras?.arrears||0),total=fixed+creditPay+trainingPay+simPay+dayOffPay+layoverPay+arrears;
-  return{month,acts,creditMins,nfCount:nf.length,nfMins:nf.reduce((n,a)=>n+activityCreditMinutes(a,activities,pay),0),trainingCount:training.length,dayOffDates,simCount,layoverMins,layoverPay,seniority,senPct,fixed,creditPay,trainingPay,simPay,dayOffPay,arrears,total};
+  return{month,acts,creditMins,nfCount:nf.length,nfMins:nf.reduce((n,a)=>n+activityCreditMinutes(a,acts,pay),0),trainingCount:training.length,dayOffDates,simCount,layoverMins,layoverPay,seniority,senPct,fixed,creditPay,trainingPay,simPay,dayOffPay,arrears,total};
 }
 
 function tripChargeableDuty(start,end,activities){
-  return (activities||[]).filter(a=>a.status!=='DELETED'&&a.type!==TYPES.DHD&&a.type!==TYPES.OFF).reduce((n,a)=>{let s=activityStart(a),e=activityEnd(a);if(!s||!e||e<=start||s>=end)return n;if(a.type===TYPES.GROUND)e=new Date(s.getTime()+5*3600e3);if(a.type===TYPES.DHP){const c=duration(a.credit);return n+c}const x=Math.max(s,start),y=Math.min(e,end);return n+Math.max(0,Math.round((y-x)/60000))},0)
+  const source=operationalEntriesForTrips(activities);
+  return source.filter(a=>a.type!==TYPES.DHD&&a.type!==TYPES.OFF).reduce((n,a)=>{let s=activityStart(a),e=activityEnd(a);if(!s||!e||e<=start||s>=end)return n;if(a.type===TYPES.GROUND)e=new Date(s.getTime()+5*3600e3);if(a.type===TYPES.DHP){const c=duration(a.credit);return n+c}const x=Math.max(s,start),y=Math.min(e,end);return n+Math.max(0,Math.round((y-x)/60000))},0)
 }
 
 // Small fallback set; full airport database is loaded lazily by the app.
@@ -562,11 +580,11 @@ function nightSegment(start,end,pointFn,step=2){if(!start||!end||end<=start)retu
 function nightMinutesForActivity(a,depInfo,arrInfo){if(a?.type!==TYPES.FLIGHT||!a.date||!depInfo||!arrInfo)return 0;let n=0;const out=dateAt(a.date,a.out),off=endDateAt(a.date,a.out,a.off),on=a.off?endDateAt(a.date,a.off,a.on):null,inn=a.on?endDateAt(a.date,a.on,a.in):null;if(out&&off)n+=nightSegment(out,off,()=>depInfo);if(off&&on)n+=nightSegment(off,on,f=>gcPoint(depInfo,arrInfo,f));if(on&&inn)n+=nightSegment(on,inn,()=>arrInfo);if(!n&&a.off&&a.on){const s=dateAt(a.date,a.off),e=endDateAt(a.date,a.off,a.on);n=nightSegment(s,e,f=>gcPoint(depInfo,arrInfo,f))}return n}
 function pfDayNightCounts(a,depInfo,arrInfo){if(a?.type!==TYPES.FLIGHT||a.pf!=='yes')return{dayTakeoffs:0,nightTakeoffs:0,dayLandings:0,nightLandings:0};const take=a.off?dateAt(a.date,a.off):null,land=a.on?endDateAt(a.date,a.off||a.on,a.on):null,depNight=take&&depInfo?solarAltitude(take,depInfo.lat,depInfo.lon)<-6:false,arrNight=land&&arrInfo?solarAltitude(land,arrInfo.lat,arrInfo.lon)<-6:false;return{dayTakeoffs:depNight?0:1,nightTakeoffs:depNight?1:0,dayLandings:arrNight?0:1,nightLandings:arrNight?1:0}}
 
-return {upper,mins,duration,fmt,span,shift,dateAt,endDateAt,monthKey,normalizeFlightNo,displayFlightNo,normalizeType,isCompleted,logbookVisible,rosterVisible,isMorocco,moroccoNightTrigger,flightCreditMinutes,activityCreditMinutes,actualBlockMinutes,airborneMinutes,simulatorMinutes,picMinutes,sicMinutes,flightInstructionMinutes,simInstructionMinutes,isTrainingPaySector,tierPay,seniorityPercent,activityStart,activityEnd,buildDutySessions,rollingDuty,rollingFlight,calendarYearFlight,rollingCalendar12Flight,ftlState,fdpLimit,payrollForMonth,tripChargeableDuty,nightMinutesForActivity,pfDayNightCounts,TYPES,TYPE_LABEL,PAY_DEFAULTS,PROFILE_DEFAULTS,WX_DEFAULTS,AIRPORT_FALLBACK};
+return {upper,mins,duration,fmt,span,shift,dateAt,endDateAt,monthKey,normalizeFlightNo,displayFlightNo,normalizeType,isCompleted,logbookVisible,rosterVisible,isMorocco,moroccoNightTrigger,flightCreditMinutes,activityCreditMinutes,actualBlockMinutes,airborneMinutes,simulatorMinutes,picMinutes,sicMinutes,flightInstructionMinutes,simInstructionMinutes,isTrainingPaySector,tierPay,seniorityPercent,activityStart,activityEnd,buildDutySessions,rollingDuty,rollingFlight,calendarYearFlight,rollingCalendar12Flight,ftlState,fdpLimit,rosterMonthAvailable,operationalEntriesForMonth,operationalEntriesForTrips,payrollForMonth,tripChargeableDuty,nightMinutesForActivity,pfDayNightCounts,TYPES,TYPE_LABEL,PAY_DEFAULTS,PROFILE_DEFAULTS,WX_DEFAULTS,AIRPORT_FALLBACK};
 })();
 
 const Importers=(()=>{
-const {TYPES,normalizeType,normalizeFlightNo,upper,span,duration,monthKey,PAY_DEFAULTS}=Rules;
+const {TYPES,normalizeType,normalizeFlightNo,upper,span,duration,monthKey,endDateAt,PAY_DEFAULTS}=Rules;
 const {sourceId,newId,recordLedger}=DB;
 
 function normalizeDate(v){v=String(v||'').trim();if(/^\d{4}-\d{2}-\d{2}$/.test(v))return v;let m=v.match(/^(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{2,4})/);if(m)return `${m[3].length===2?'20'+m[3]:m[3]}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`;return''}
@@ -574,15 +592,40 @@ function parseDateTimeString(v){const s=String(v||'').trim(),m=s.match(/^(\d{1,2
 function sourceMeta(source,key,extra={}){return {source,sourceKey:key,...extra}}
 function now(){return new Date().toISOString()}
 function cleanActivity(a){
-  const type=normalizeType(a.type||a.dutyType);return {
-    id:a.id||newId('act'),type,date:normalizeDate(a.date),status:a.status||((a.completed||a.locked||a.out||a.in||a.simulatorTime)?'COMPLETED':'PLANNED'),
-    source:a.source||'manual',sourceKey:a.sourceKey||'',revision:Number(a.revision||a._syncRev||1),updatedAt:a.updatedAt||a._updatedAt||now(),createdAt:a.createdAt||now(),manualOverride:!!a.manualOverride,locked:!!a.locked,
-    roster:a.roster||{planned:!!a.aerolineRosterPlanned,visible:a.rosterHidden!==true,month:monthKey(a.date)},
-    flightNo:normalizeFlightNo(a.flightNo||''),dep:upper(a.dep),arr:upper(a.arr),location:upper(a.location||''),reg:upper(a.reg),aircraftType:upper(a.aircraftType||a.typeAircraft||a.aircraft||a.type),
-    schedOut:a.schedOut||a.std||'',schedIn:a.schedIn||a.sta||'',report:a.report||a.onDuty||'',release:a.release||a.offDuty||'',out:a.out||'',off:a.off||'',on:a.on||'',in:a.in||'',
-    simulatorTime:typeof a.simulatorTime==='number'?a.simulatorTime:duration(a.simulatorTime),credit:typeof a.credit==='number'?a.credit:duration(a.credit),creditExplicit:!!(a.creditExplicit||a.groundCreditExplicit),
-    role:a.role||'PIC',seatPosition:a.seatPosition||'',picName:upper(a.picName),sicName:upper(a.sicName),soName:upper(a.soName),instructorName:upper(a.instructorName),instructionType:a.instructionType||'',ifr:a.ifr||'yes',pf:a.pf||'no',approachType:upper(a.approachType),delayReason:upper(a.delayReason),night:a.night||'00:00',dayTakeoffs:Number(a.dayTakeoffs||0),nightTakeoffs:Number(a.nightTakeoffs||0),dayLandings:Number(a.dayLandings||0),nightLandings:Number(a.nightLandings||0),courseType:upper(a.courseType),callFromDayOff:!!a.callFromDayOff,remarks:String(a.remarks||''),aeroline:a.aeroline||{},legacy:a.legacy||{}
+  const type=normalizeType(a.type||a.dutyType),legacy={...(a.legacy||{})};
+  // Preserve source-specific identity and old PilotLog fields for lossless migration/debugging.
+  for(const k of ['v8Id','rosterItemId','rosterAerolineKey','aerolineKey','aerolineFlightLegId','aerolineBlockId','logtenUniqueId','logtenPk','logtenType','sourceRowKey','sourceRowType','calendarUid','totalDuty','sectors']){
+    if(a[k]!=null&&a[k]!==''&&legacy[k]==null)legacy[k]=a[k];
   }
+  const aeroline={...(a.aeroline||{})};
+  if(!aeroline.trainerType&&a.aerolineTrainerType)aeroline.trainerType=a.aerolineTrainerType;
+  if(!aeroline.trainingType&&a.aerolineTrainingType)aeroline.trainingType=a.aerolineTrainingType;
+  if(!aeroline.trainingLabel&&a.aerolineTrainingLabel)aeroline.trainingLabel=a.aerolineTrainingLabel;
+  if(!aeroline.blockId&&a.aerolineBlockId)aeroline.blockId=String(a.aerolineBlockId);
+  if(!aeroline.flightLegId&&a.aerolineFlightLegId)aeroline.flightLegId=String(a.aerolineFlightLegId);
+  const roster={...(a.roster||{})};
+  if(roster.planned==null)roster.planned=!!a.aerolineRosterPlanned||!!a.rosterItemId||!!a.rosterAerolineKey;
+  if(roster.visible==null)roster.visible=a.rosterHidden!==true;
+  if(!roster.month)roster.month=monthKey(a.date);
+  if(!roster.blockId&&a.aerolineBlockId)roster.blockId=String(a.aerolineBlockId);
+  if(!roster.legId&&a.aerolineFlightLegId)roster.legId=String(a.aerolineFlightLegId);
+  return {
+    ...a,
+    id:a.id||newId('act'),type,date:normalizeDate(a.date),status:a.status||((a.completed||a.locked||a.out||a.in)?'COMPLETED':'PLANNED'),
+    source:a.source||'manual',sourceKey:a.sourceKey||'',revision:Number(a.revision||a._syncRev||1),updatedAt:a.updatedAt||a._updatedAt||now(),createdAt:a.createdAt||now(),manualOverride:!!a.manualOverride,locked:!!a.locked,
+    roster,
+    flightNo:normalizeFlightNo(a.flightNo||''),dep:upper(a.dep),arr:upper(a.arr),location:upper(a.location||''),reg:upper(a.reg),aircraftType:upper(a.aircraftType||a.typeAircraft||a.aircraft||''),
+    schedOut:a.schedOut||a.std||'',schedIn:a.schedIn||a.sta||'',report:a.report||a.onDuty||'',release:a.release||a.offDuty||'',out:a.out||'',off:a.off||'',on:a.on||'',in:a.in||'',
+    schedBlock:typeof a.schedBlock==='number'?a.schedBlock:duration(a.schedBlock),block:typeof a.block==='number'?a.block:duration(a.block),flight:typeof a.flight==='number'?a.flight:duration(a.flight),
+    simulatorTime:typeof a.simulatorTime==='number'?a.simulatorTime:duration(a.simulatorTime),credit:typeof a.credit==='number'?a.credit:duration(a.credit),creditExplicit:!!(a.creditExplicit||a.groundCreditExplicit),
+    role:a.role||'PIC',seatPosition:a.seatPosition||'',picName:upper(a.picName),sicName:upper(a.sicName),soName:upper(a.soName),instructorName:upper(a.instructorName),instructionType:a.instructionType||'',ifr:a.ifr||'yes',pf:a.pf||'no',approachType:upper(a.approachType),delayReason:upper(a.delayReason),delayMinutes:Number(a.delayMinutes||0),night:a.night||'00:00',dayTakeoffs:Number(a.dayTakeoffs||0),nightTakeoffs:Number(a.nightTakeoffs||0),dayLandings:Number(a.dayLandings||0),nightLandings:Number(a.nightLandings||0),courseType:upper(a.courseType),callFromDayOff:!!a.callFromDayOff,remarks:String(a.remarks||''),aeroline,legacy
+  }
+}
+function v8DraftToV9(d){
+  if(!d||typeof d!=='object')return null;
+  const type=normalizeType(d.dutyTypeFlight||d.dutyType||'Flight'),editId=String(d.editId||d._editId||''),report=d.onDuty||d.report||'',release=d.offDuty||d.release||'';
+  const x=cleanActivity({id:editId,type,date:d.date,status:'DRAFT',source:d.source||'manual',flightNo:d.flightNo||'',reg:d.reg||'',aircraftType:d.aircraftType||d.type||'',location:d.simLocation||d.location||'',dep:d.dep||'',arr:d.arr||'',schedOut:d.schedOut||'',schedIn:d.schedIn||'',report,release,out:d.out||'',off:d.off||'',on:d.on||'',in:d.in||'',simulatorTime:type===TYPES.SIM?span(report,release):duration(d.simulatorTime),credit:duration(d.creditDisplay||d.credit),creditExplicit:[TYPES.DHP,TYPES.GROUND,TYPES.STBY].includes(type),role:d.role||'PIC',seatPosition:d.seatPosition||'',callFromDayOff:!!d.callFromDayOff,picName:d.picName||'',sicName:d.sicName||'',soName:d.soName||'',instructorName:d.instructorName||'',instructionType:d.instructionType||'',night:d.night||'00:00',ifr:d.ifr||'yes',pf:d.pf||'no',approachType:d.approachType||'',dayTakeoffs:Number(d.dayTakeoffs||0),nightTakeoffs:Number(d.nightTakeoffs||0),dayLandings:Number(d.dayLandings||0),nightLandings:Number(d.nightLandings||0),delayReason:d.delayReason||'',courseType:d.courseType||'',remarks:d.remarks||''});
+  x._draftId=String(d.entryDraftId||d._draftId||newId('draft'));x._editId=editId;x.id=editId;x.savedAt=d.savedAt||now();return x;
 }
 function semanticKey(a){return [a.type,a.date,normalizeFlightNo(a.flightNo),upper(a.dep),upper(a.arr),a.schedOut||a.report||'',a.schedIn||a.release||'',upper(a.courseType||a.location)].join('|')}
 function mergeActivity(existing,incoming){
@@ -595,26 +638,91 @@ function mergeActivity(existing,incoming){
   return {...existing,...incoming,id:existing.id,updatedAt:now(),revision:Math.max(Number(existing.revision||1),Number(incoming.revision||1))+1};
 }
 
-async function importV8Backup(payload,currentActivities=[]){
-  if(!payload||typeof payload!=='object')throw new Error('Invalid PilotLog v8 backup.');
-  const flights=Array.isArray(payload.flights)?payload.flights:[],roster=Array.isArray(payload.roster)?payload.roster:[],expiry=Array.isArray(payload.expiry)?payload.expiry:[],trips=Array.isArray(payload.trips)?payload.trips:[];
-  const byId=new Map(currentActivities.map(a=>[a.id,a])),bySemantic=new Map(currentActivities.map(a=>[semanticKey(a),a]));let added=0,updated=0;
-  // Operational/logbook rows first.
+async function importV8Backup(payload){
+  if(!payload||typeof payload!=='object'||payload.schema!=='PilotLog Backup')throw new Error('This is not a PilotLog Full Backup JSON.');
+  for(const k of ['flights','roster','duties','trips','expiry'])if(payload[k]!=null&&!Array.isArray(payload[k]))throw new Error(`Invalid v8 backup section: ${k}.`);
+  const flights=Array.isArray(payload.flights)?payload.flights:[],roster=Array.isArray(payload.roster)?payload.roster:[],duties=Array.isArray(payload.duties)?payload.duties:[],expiry=Array.isArray(payload.expiry)?payload.expiry:[],trips=Array.isArray(payload.trips)?payload.trips:[];
+  const activities=[],idMap=new Map(),byId=new Map();
+  const add=a=>{let id=a.id||newId('act');if(byId.has(id)){const original=id;id=newId('act');a={...a,id,legacy:{...(a.legacy||{}),duplicateLegacyId:original}}}activities.push(a);byId.set(id,a);return a};
+  const v8Type=x=>normalizeType(x?.dutyType||x?.type||((x?.flightNo||x?.dep||x?.arr)?'Flight':''));
+  const v8FlightStatus=(raw,type)=>{
+    if(type===TYPES.FLIGHT)return 'COMPLETED'; // v8 Logbook considered every Flight row a logbook entry.
+    if(type===TYPES.SIM){const s=raw.onDuty||raw.schedOut||'00:00',e=raw.offDuty||raw.schedIn||raw.onDuty||'23:59',end=endDateAt(normalizeDate(raw.date),s,e);return end&&end<=new Date()?'COMPLETED':'PLANNED'}
+    if(raw.locked)return 'COMPLETED';
+    return raw.aerolineRosterPlanned?'PLANNED':'COMPLETED';
+  };
+  // IMPORTANT: every v8 flight/entry row is retained. No semantic dedupe is allowed here.
   for(const raw of flights){
-    let a=cleanActivity({...raw,aircraftType:raw.aircraftType||raw.type,type:raw.dutyType});a.legacy.v8Id=raw.id||'';a.roster.planned=!!raw.aerolineRosterPlanned||!!raw.rosterLinkId;a.roster.visible=raw.rosterHidden!==true;a.status=(raw.dutyType==='Flight'||raw.dutyType==='Simulator')?(raw.locked||raw.out||raw.in||raw.simulatorTime?'COMPLETED':'PLANNED'):(raw.status||'COMPLETED');
-    if(raw.logtenUniqueId){a.source='logten';a.sourceKey=`logten:${raw.logtenUniqueId}`;a.id=sourceId('logten',raw.logtenUniqueId)}
-    const match=byId.get(a.id)||bySemantic.get(semanticKey(a));if(match){const m=mergeActivity(match,a);byId.set(m.id,m);bySemantic.set(semanticKey(m),m);updated++}else{byId.set(a.id,a);bySemantic.set(semanticKey(a),a);added++}
+    const type=v8Type(raw),legacyId=String(raw.id||'');
+    let sourceKey='';if(raw.source==='aeroline'&&raw.aerolineKey)sourceKey=String(raw.aerolineKey);else if(raw.source==='logten'&&raw.logtenUniqueId)sourceKey=`logten:${raw.logtenUniqueId}`;else if(raw.source==='logten'&&raw.sourceRowKey)sourceKey=`logten-row:${raw.sourceRowKey}`;else sourceKey=String(raw.sourceKey||'');
+    const a=cleanActivity({...raw,id:legacyId||newId('act'),aircraftType:raw.aircraftType||raw.type||'',type,status:v8FlightStatus(raw,type),sourceKey,legacy:{...(raw.legacy||{}),v8Id:legacyId}});
+    // v8 non-flight AeroLINE activities were roster-visible from FLIGHTS_KEY itself.
+    if(type!==TYPES.FLIGHT&&raw.aerolineRosterPlanned){a.roster={...(a.roster||{}),planned:true,visible:raw.rosterHidden!==true,month:monthKey(a.date),blockId:String(raw.aerolineBlockId||''),legId:String(raw.aerolineFlightLegId||'')}}
+    add(a);if(legacyId)idMap.set(legacyId,a.id);
   }
-  // Roster rows become/plumb into the same activities, never a second database.
+  const flightsOnly=()=>activities.filter(x=>x.type===TYPES.FLIGHT);
+  const sameFlightIdentity=(a,r)=>a.type===TYPES.FLIGHT&&a.date===normalizeDate(r.date)&&normalizeFlightNo(a.flightNo)===normalizeFlightNo(r.flightNo)&&upper(a.dep)===upper(r.dep)&&upper(a.arr)===upper(r.arr);
+  const findRosterLink=r=>{
+    // The v8 backup already contains the authoritative completedEntryId. Use it first.
+    if(r.completedEntryId){const exact=byId.get(String(r.completedEntryId));if(exact?.type===TYPES.FLIGHT)return exact}
+    let m=flightsOnly().find(x=>x.legacy?.rosterItemId&&String(x.legacy.rosterItemId)===String(r.id||''));if(m)return m;
+    if(r.aerolineKey){m=flightsOnly().find(x=>String(x.legacy?.rosterAerolineKey||x.legacy?.aerolineKey||x.sourceKey||'')===String(r.aerolineKey));if(m)return m}
+    if(r.aerolineFlightLegId){m=flightsOnly().find(x=>String(x.legacy?.aerolineFlightLegId||x.aeroline?.flightLegId||'')===String(r.aerolineFlightLegId));if(m)return m}
+    // v8.9 treats a Roster sector as completed whenever an existing Flight can be
+    // identified by date + flight number + route, even if the Roster row itself still says
+    // planned. This matters after LogTen migration: historical LogTen flights may predate
+    // the AeroLINE Roster import and therefore have no rosterItemId/completedEntryId yet.
+    // Reproduce that v8.9 fallback here, but only when the identity is unique.
+    const candidates=flightsOnly().filter(x=>sameFlightIdentity(x,r));
+    if(candidates.length===1)return candidates[0];
+    const exact=candidates.filter(x=>(!r.std||!x.schedOut||x.schedOut===r.std)&&(!r.sta||!x.schedIn||x.schedIn===r.sta));
+    return exact.length===1?exact[0]:null;
+  };
+  const attachRosterMetadata=(linked,r,date)=>{
+    const done=true; // Existing authoritative Flight = completed Roster sector, matching v8.9 savedEntryForRosterSector().
+    linked.roster={...(linked.roster||{}),planned:true,visible:r.rosterHidden!==true,month:monthKey(date),blockId:String(r.aerolineBlockId||linked.roster?.blockId||''),legId:String(r.aerolineFlightLegId||linked.roster?.legId||''),legacyRosterId:String(r.id||''),completed:done};
+    linked.legacy={...(linked.legacy||{}),rosterItemId:linked.legacy?.rosterItemId||r.id||'',rosterAerolineKey:linked.legacy?.rosterAerolineKey||r.aerolineKey||'',v8RosterCompletedEntryId:r.completedEntryId||''};
+    linked.aeroline={...(linked.aeroline||{}),blockId:String(r.aerolineBlockId||linked.aeroline?.blockId||''),flightLegId:String(r.aerolineFlightLegId||linked.aeroline?.flightLegId||''),trainerType:r.aerolineTrainerType||linked.aeroline?.trainerType||'',trainingType:r.aerolineTrainingType||linked.aeroline?.trainingType||'',trainingLabel:r.aerolineTrainingLabel||linked.aeroline?.trainingLabel||'',joiningCrew:Array.isArray(r.aerolineCrew)?r.aerolineCrew:(linked.aeroline?.joiningCrew||[])};
+    if(r.aerolineKey&&!linked.sourceKey)linked.sourceKey=String(r.aerolineKey);
+    // Do not fill or replace operational fields here. The already-saved v8 Logbook
+    // record (including intentionally blank values) is authoritative.
+    return linked;
+  };
+  let rosterMerged=0,rosterAdded=0;
   for(const r of roster){
-    const rawType=r.dutyType||r.type||((r.flightNo||r.dep||r.arr)?'Flight':'');if(!rawType)continue;
-    let a=cleanActivity({...r,aircraftType:r.aircraftType||r.type,type:rawType,status:'PLANNED'});a.roster={planned:true,visible:r.rosterHidden!==true,month:monthKey(a.date),blockId:String(r.aerolineBlockId||r.blockId||''),legId:String(r.aerolineFlightLegId||r.flightLegId||''),completed:!!r.completed};
-    if(r.aerolineKey||r.aerolineFlightLegId||r.flightLegId){a.source='aeroline';a.sourceKey=String(r.aerolineKey||`flight:${r.aerolineFlightLegId||r.flightLegId}`);a.id=sourceId('aeroline',a.sourceKey)}
-    const linked=[...byId.values()].find(x=>r.linkedLogbookId&&x.legacy?.v8Id===r.linkedLogbookId)||byId.get(a.id)||bySemantic.get(semanticKey(a));
-    if(linked){const m=mergeActivity(a,linked);m.roster={...(a.roster||{}),...(linked.roster||{}),planned:true,visible:r.rosterHidden!==true};m.status=(linked.status==='COMPLETED'||r.completed)?'COMPLETED':linked.status;byId.delete(linked.id);byId.set(m.id,m);bySemantic.set(semanticKey(m),m);updated++}else{byId.set(a.id,a);bySemantic.set(semanticKey(a),a);added++}
+    const date=normalizeDate(r.date);if(!date)continue;
+    const linked=findRosterLink(r);
+    if(linked){attachRosterMetadata(linked,r,date);if(r.id)idMap.set(String(r.id),linked.id);rosterMerged++;continue}
+    const a=cleanActivity({...r,id:r.id||newId('act'),type:TYPES.FLIGHT,aircraftType:r.type||'',date,status:'PLANNED',source:r.source||'roster',sourceKey:r.aerolineKey||r.sourceKey||'',schedOut:r.std||'',schedIn:r.sta||'',roster:{planned:true,visible:r.rosterHidden!==true,month:monthKey(date),blockId:String(r.aerolineBlockId||''),legId:String(r.aerolineFlightLegId||''),legacyRosterId:String(r.id||''),completed:false},aeroline:{blockId:String(r.aerolineBlockId||''),flightLegId:String(r.aerolineFlightLegId||''),trainerType:r.aerolineTrainerType||'',trainingType:r.aerolineTrainingType||'',trainingLabel:r.aerolineTrainingLabel||'',joiningCrew:Array.isArray(r.aerolineCrew)?r.aerolineCrew:[]},legacy:{v8RosterId:String(r.id||''),aerolineKey:r.aerolineKey||'',aerolineFlightLegId:r.aerolineFlightLegId||'',aerolineBlockId:r.aerolineBlockId||''}});
+    add(a);if(r.id)idMap.set(String(r.id),a.id);rosterAdded++;
   }
-  const settings={profile:{...(payload.appSettings||{})},pay:{...PAY_DEFAULTS,...(payload.paySettings||{})},payrollExtras:payload.payrollExtras||payload.payMonth||{},fx:payload.fx||{}};
-  return{activities:[...byId.values()],expiry:dedupeExpiry(expiry.map(x=>normalizeExpiry(x))),trips:trips.map(normalizeTrip),settings,stats:{added,updated,flights:flights.length,roster:roster.length,expiry:expiry.length,trips:trips.length}};
+  // Duty rows in v8 are mostly OFF or duty envelopes. OFF/standalone activities are retained;
+  // Flight Duty envelopes enrich existing flight records instead of becoming duplicate activities.
+  let dutyAdded=0,dutyEnriched=0,dutySkipped=0;
+  for(const d of duties){
+    const date=normalizeDate(d.date);if(!date){dutySkipped++;continue}const label=upper(d.type||d.dutyType||'');
+    if(label.includes('FLIGHT DUTY')){
+      let group=activities.filter(a=>a.type===TYPES.FLIGHT&&a.date===date&&a.status!=='DELETED');
+      if(d.aerolineBlockId)group=group.filter(a=>String(a.roster?.blockId||a.aeroline?.blockId||'')===String(d.aerolineBlockId));
+      group.sort((a,b)=>String(a.schedOut||a.out||'').localeCompare(String(b.schedOut||b.out||'')));
+      if(group.length){if(d.report&&!group[0].report)group[0].report=d.report;if(d.end&&!group.at(-1).release)group.at(-1).release=d.end;group.forEach(a=>{a.legacy={...(a.legacy||{}),v8DutyId:d.id||'',v8DutyType:d.type||'',v8DutyMinutes:d.minutes||0}});dutyEnriched++}else dutySkipped++;
+      continue;
+    }
+    let type=null;if(/^(DAY OFF|OFF|LEAVE)$/.test(label))type=TYPES.OFF;else if(['STBY','STANDBY','HSBY'].includes(label))type=TYPES.STBY;else if(label==='DHD')type=TYPES.DHD;else if(label==='DHP')type=TYPES.DHP;else if(label.includes('GROUND'))type=TYPES.GROUND;
+    if(!type){dutySkipped++;continue}
+    const start=d.report||d.start||'',end=d.end||d.release||'';
+    const duplicate=activities.find(a=>a.type===type&&a.date===date&&((!start||!a.report||a.report===start)&&(!end||!a.release||a.release===end)));
+    if(duplicate){duplicate.roster={...(duplicate.roster||{}),planned:true,visible:true,month:monthKey(date)};duplicate.legacy={...(duplicate.legacy||{}),v8DutyId:d.id||''};if(d.id)idMap.set(String(d.id),duplicate.id);dutyEnriched++;continue}
+    const a=cleanActivity({...d,id:d.id||newId('act'),type,date,status:type===TYPES.OFF?'PLANNED':'COMPLETED',source:d.source||'legacy-duty',sourceKey:d.aerolineKey||'',report:start,release:end,remarks:d.notes||d.remarks||'',roster:{planned:true,visible:true,month:monthKey(date),blockId:String(d.aerolineBlockId||'')},legacy:{v8DutyId:String(d.id||''),v8DutyType:d.type||''}});add(a);if(d.id)idMap.set(String(d.id),a.id);dutyAdded++;
+  }
+  // Preserve every trip field; remap entry references only when a roster row was unified into a flight.
+  const migratedTrips=trips.map(t=>normalizeTrip({...t,includedEntryIds:Array.isArray(t.includedEntryIds)?t.includedEntryIds.map(id=>idMap.get(String(id))||id):[]}));
+  const settings={profile:{...Rules.PROFILE_DEFAULTS,...(payload.appSettings||{})},pay:{...PAY_DEFAULTS,...(payload.paySettings||{})},payrollExtras:payload.payrollExtras||payload.payMonth||{},fx:payload.fx||{},legacy:{logTenArchiveMeta:payload.logTenArchiveMeta||{}}};
+  const draftSource=[...(Array.isArray(payload.drafts)?payload.drafts:[]),...(payload.activeDraft?[payload.activeDraft]:[])],migratedDrafts=[];for(const d of draftSource){const x=v8DraftToV9(d);if(!x)continue;const k=x._draftId||[x._editId,x.date,x.type,x.savedAt].join('|');if(!migratedDrafts.some(y=>(y._draftId||[y._editId,y.date,y.type,y.savedAt].join('|'))===k))migratedDrafts.push(x)}
+  const migratedExpiry=dedupeExpiry(expiry.map(x=>normalizeExpiry(x))),expiryMerged=Math.max(0,expiry.length-migratedExpiry.length);
+  const ids=activities.map(a=>a.id),uniqueIds=new Set(ids);if(uniqueIds.size!==ids.length)throw new Error('Migration integrity check failed: duplicate activity IDs.');
+  const legacyFlightIds=new Set(flights.map(x=>String(x.id||'')).filter(Boolean)),retainedLegacyIds=new Set(activities.map(a=>String(a.legacy?.v8Id||'')).filter(Boolean));for(const id of legacyFlightIds)if(!retainedLegacyIds.has(id))throw new Error(`Migration integrity check failed: legacy entry ${id} was not retained.`);
+  return{activities,expiry:migratedExpiry,trips:migratedTrips,drafts:migratedDrafts,settings,stats:{flights:flights.length,roster:roster.length,duties:duties.length,rosterMerged,rosterAdded,dutyAdded,dutyEnriched,dutySkipped,expiry:expiry.length,expiryMerged,trips:trips.length,drafts:migratedDrafts.length}};
 }
 
 function trainingMatch(root,row,date,flightNo){const list=Array.isArray(root?.trainingCrewScheduleInfoList)?root.trainingCrewScheduleInfoList:[];return list.find(t=>normalizeDate(t.trainDate||t.trainDateString)===date&&(!flightNo||normalizeFlightNo(t.trainLocOrFlight)===normalizeFlightNo(flightNo)))||null}
@@ -675,13 +783,14 @@ function parseLogTenTab(text,profile={}){
   return out;
 }
 
-const COURSE_ALIASES={CRM:['CRM','CREW RESOURCE MANAGEMENT'],SMS:['SMS','SAFETY MANAGEMENT SYSTEM'],GRT:['GRT','GROUND RECURRENT TRAINING','E-GRT'],DGR:['DGR','DANGEROUS GOODS'],AVSEC:['AVSEC','AVIATION SECURITY'],SEP:['SEP','SAFETY AND EMERGENCY PROCEDURES'],FIRSTAID:['FIRST AID','FIRSTAID'],UPRT:['UPRT','UPSET PREVENTION'],EBTCBTA:['EBT/CBTA','EBT CBTA','CBTA'],OPC:['OPC','OPERATOR PROFICIENCY CHECK'],PPC:['PPC','PILOT PROFICIENCY CHECK']};
-function courseCode(x){const s=upper([x.name,x.remarks].join(' '));for(const [code,aliases] of Object.entries(COURSE_ALIASES))if(aliases.some(a=>s.includes(a)))return code;return upper(x.name).replace(/[^A-Z0-9]/g,'')}
-function expiryIdentity(x){const c=x.category||'course';if(c==='course')return `course|${courseCode(x)}`;if(c==='medical')return `medical|${upper(x.authority)}|${upper(x.medicalClass||x.name)}`;if(c==='english')return `english|${upper(x.authority)}|LPC`;if(c==='aircraft')return `aircraft|${upper(x.aircraftType||x.name)}`;return `${c}|${upper(x.authority)}|${upper(x.name)}`}
-function normalizeExpiry(x){return {id:x.id||newId('exp'),category:x.category||'course',name:upper(x.name||x.rating||x.courseName),authority:upper(x.authority),number:upper(x.number),date:x.date||x.lastCheck||x.courseDate||'',expiry:normalizeDate(x.expiry),medicalClass:upper(x.medicalClass),englishLevel:String(x.englishLevel||''),aircraftType:upper(x.aircraftType),endorsedBy:upper(x.endorsedBy),issuer:upper(x.issuer||x.provider),remarks:upper(x.remarks),photoData:x.photoData||'',locked:!!x.locked,manualOverride:!!x.manualOverride,source:x.source||'manual',sourceKey:x.sourceKey||'',revision:Number(x.revision||1),createdAt:x.createdAt||now(),updatedAt:x.updatedAt||x._updatedAt||now()}}
+const COURSE_ALIASES={CRM:['CRM','CREW RESOURCE MANAGEMENT'],SMS:['SMS','SAFETY MANAGEMENT SYSTEM'],GRT:['GRT','GROUND RECURRENT TRAINING'],DGR:['DGR','DANGEROUS GOODS'],AVSEC:['AVSEC','AVIATION SECURITY'],SEP:['SEP','SAFETY AND EMERGENCY PROCEDURES','SAFETY EMERGENCY PROCEDURES'],FIRSTAID:['FIRST AID','FIRSTAID'],UPRT:['UPRT','UPSET PREVENTION AND RECOVERY TRAINING'],EBTCBTA:['EBT/CBTA','EBT CBTA','CBTA','EVIDENCE BASED TRAINING'],OPC:['OPC','OPERATOR PROFICIENCY CHECK'],PPC:['PPC','PILOT PROFICIENCY CHECK']};
+function normalizeExpiryText(v){return upper(v||'').replace(/AEROLINE|LOGTEN|TYPE|ENDORSEMENT|COURSE|VALIDATION/g,' ').replace(/[^A-Z0-9]+/g,' ').replace(/\s+/g,' ').trim()}
+function courseCode(x){const explicit=upper(x?.aerolineValidationCode||'');if(explicit)return explicit.replace(/[^A-Z0-9/]+/g,'');const text=normalizeExpiryText([x?.name,x?.remarks,x?.aerolineValidationDesc].filter(Boolean).join(' '));for(const [code,aliases] of Object.entries(COURSE_ALIASES))if(aliases.some(a=>{const n=normalizeExpiryText(a);return text===n||text.includes(` ${n} `)||text.startsWith(`${n} `)||text.endsWith(` ${n}`)}))return code;return normalizeExpiryText(x?.name||'').replace(/\s+/g,'')}
+function expiryIdentity(x){const c=String(x?.category||'course').toLowerCase();if(c==='course'){const code=courseCode(x);return code?`course|${code}`:''}const authority=normalizeExpiryText(x?.authority||''),name=normalizeExpiryText(x?.name||x?.medicalClass||x?.aircraftType||x?.aerolineValidationCode||'');if(!name)return'';return `${c}|${name}|${authority}`}
+function normalizeExpiry(x){return {...x,id:x.id||newId('exp'),category:x.category||'course',name:upper(x.name||x.rating||x.courseName),authority:upper(x.authority),number:upper(x.number),date:x.date||x.lastCheck||x.courseDate||'',lastCheck:x.lastCheck||'',courseDate:x.courseDate||'',expiry:normalizeDate(x.expiry),medicalClass:upper(x.medicalClass),englishLevel:String(x.englishLevel||''),aircraftType:upper(x.aircraftType),endorsedBy:upper(x.endorsedBy),issuer:upper(x.issuer||x.provider),remarks:upper(x.remarks),photoData:x.photoData||'',locked:!!x.locked,manualOverride:!!x.manualOverride,source:x.source||'manual',sourceKey:x.sourceKey||'',revision:Number(x.revision||x._syncRev||1),createdAt:x.createdAt||now(),updatedAt:x.updatedAt||x._updatedAt||now()}}
 function dedupeExpiry(rows){const map=new Map();for(const raw of rows||[]){const x=normalizeExpiry(raw),key=expiryIdentity(x);if(!map.has(key)){map.set(key,x);continue}const a=map.get(key),protectedA=a.locked||a.manualOverride,protectedX=x.locked||x.manualOverride;let keep=protectedA&&!protectedX?a:protectedX&&!protectedA?x:(String(x.expiry||'')>String(a.expiry||'')?x:a),other=keep===a?x:a;keep={...other,...keep,id:keep.id||other.id,sourceKey:keep.sourceKey||other.sourceKey,updatedAt:now()};map.set(key,keep)}return[...map.values()]}
 function mergeExpiry(existing,incoming){return dedupeExpiry([...(existing||[]),...(incoming||[])])}
-function normalizeTrip(t){return{id:t.id||newId('trip'),name:upper(t.name||t.title||''),start:t.start||'',end:t.end||'',trip:Number(t.trip||0),duty:Number(t.duty||0),layover:Number(t.layover||0),allowance:Number(t.allowance||0),cashAmount:Number(t.cashAmount||0),cashCurrency:upper(t.cashCurrency||'MAD'),cashFxRate:Number(t.cashFxRate||0),cashFxDate:t.cashFxDate||'',cashFxTo:upper(t.cashFxTo||''),cashConverted:Number(t.cashConverted||0),tripFxMadRate:Number(t.tripFxMadRate||0),tripFxDate:t.tripFxDate||'',tripFxTo:upper(t.tripFxTo||''),tripFxTripStartDate:t.tripFxTripStartDate||'',remarks:String(t.remarks||''),source:t.source||'manual',manualOverride:!!t.manualOverride,revision:Number(t.revision||1),createdAt:t.createdAt||now(),updatedAt:t.updatedAt||t._updatedAt||now()}}
+function normalizeTrip(t){return {...t,id:t.id||newId('trip'),name:upper(t.name||t.title||t.stations||''),base:upper(t.base||''),stations:upper(t.stations||''),start:t.start||'',end:t.end||'',trip:Number(t.trip||0),duty:Number(t.duty||0),layover:Number(t.layover||0),allowance:Number(t.allowance||0),allowanceCurrency:upper(t.allowanceCurrency||'MAD'),includedEntryIds:Array.isArray(t.includedEntryIds)?t.includedEntryIds.slice():[],cashEligible:!!t.cashEligible,cashAmount:Number(t.cashAmount||0),cashCurrency:upper(t.cashCurrency||'MAD'),cashEur:Number(t.cashEur||0),cashFxFrom:upper(t.cashFxFrom||''),cashFxRate:Number(t.cashFxRate||0),cashFxDate:t.cashFxDate||'',cashFxTripStartDate:t.cashFxTripStartDate||'',cashFxRates:t.cashFxRates&&typeof t.cashFxRates==='object'?t.cashFxRates:{},cashFxTo:upper(t.cashFxTo||''),cashConverted:Number(t.cashConverted||0),tripFxMadRate:Number(t.tripFxMadRate||0),tripFxDate:t.tripFxDate||'',tripFxTo:upper(t.tripFxTo||''),tripFxTripStartDate:t.tripFxTripStartDate||'',remarks:String(t.remarks||''),source:t.source||'manual',manualOverride:!!t.manualOverride,revision:Number(t.revision||t._syncRev||1),createdAt:t.createdAt||now(),updatedAt:t.updatedAt||t._updatedAt||now()}}
 
 const LOGTEN_MIGRATION_MAGIC='PLGTN001';
 function parseCompleteLogTenPackage(buffer){
@@ -753,7 +862,7 @@ async function signIn(email,password){const s=await api('/auth/v1/token?grant_ty
 async function signUp(email,password){const s=await api('/auth/v1/signup',{method:'POST',body:{email,password},headers:{'x-client-info':'pilotlog9-web'}});if(s?.access_token)saveSession(s);return s}
 async function signOut(){const s=await cloudSession();if(s?.access_token)try{await api('/auth/v1/logout',{method:'POST',token:s.access_token})}catch{}saveSession(null)}
 function autoEnabled(){return localStorage.getItem(AUTO_KEY)==='yes'}
-function setAutoEnabled(v){localStorage.setItem(AUTO_KEY,v?'yes':'no')}
+function setAutoEnabled(v){localStorage.setItem(AUTO_KEY,v?'yes':'no');if(!v&&timer){clearTimeout(timer);timer=null}}
 function markDirty(){localStorage.setItem(DIRTY_KEY,'1')}
 function isDirty(){return localStorage.getItem(DIRTY_KEY)==='1'}
 function lastSync(){return localStorage.getItem(LAST_SYNC_KEY)||''}
@@ -779,14 +888,14 @@ function scheduleAutoSync(run,delay=1800){if(!autoEnabled())return;clearTimeout(
 return {cloudSession,signIn,signUp,signOut,autoEnabled,setAutoEnabled,markDirty,isDirty,lastSync,sync,deleteAllDb9,scheduleAutoSync};
 })();
 
-const {TYPES,TYPE_LABEL,PAY_DEFAULTS,PROFILE_DEFAULTS,WX_DEFAULTS,upper,mins,duration,fmt,span,shift,dateAt,endDateAt,monthKey,normalizeFlightNo,displayFlightNo,logbookVisible,rosterVisible,activityCreditMinutes,actualBlockMinutes,airborneMinutes,simulatorMinutes,picMinutes,sicMinutes,flightInstructionMinutes,simInstructionMinutes,payrollForMonth,tripChargeableDuty,rollingDuty,rollingFlight,calendarYearFlight,rollingCalendar12Flight,ftlState,fdpLimit,buildDutySessions,nightMinutesForActivity,pfDayNightCounts,AIRPORT_FALLBACK}=Rules;
+const {TYPES,TYPE_LABEL,PAY_DEFAULTS,PROFILE_DEFAULTS,WX_DEFAULTS,upper,mins,duration,fmt,span,shift,dateAt,endDateAt,monthKey,normalizeFlightNo,displayFlightNo,logbookVisible,rosterVisible,activityCreditMinutes,actualBlockMinutes,airborneMinutes,simulatorMinutes,picMinutes,sicMinutes,flightInstructionMinutes,simInstructionMinutes,rosterMonthAvailable,operationalEntriesForMonth,operationalEntriesForTrips,payrollForMonth,tripChargeableDuty,rollingDuty,rollingFlight,calendarYearFlight,rollingCalendar12Flight,ftlState,fdpLimit,buildDutySessions,nightMinutesForActivity,pfDayNightCounts,AIRPORT_FALLBACK}=Rules;
 
 const {importV8Backup,parseAeroline,mergeImportedActivities,parseLogTenTab,mergeExpiry,dedupeExpiry,normalizeExpiry,expiryIdentity,normalizeTrip,parseCompleteLogTenPackage,completeLogTenEntries,completeLogTenSupplemental,parseCalendarIcs,parseRosterCsv,parseScreenshotText}=Importers;
 
 
 const $=id=>document.getElementById(id);
 const $$=sel=>[...document.querySelectorAll(sel)];
-const VERSION='9.0';
+const VERSION='9.0-rc4';
 const APP_SCHEMA='PilotLog9 Backup';
 const AIRPORT_SOURCE='https://raw.githubusercontent.com/mwgg/Airports/master/airports.json';
 let state={activities:[],expiry:[],trips:[],ledger:[],settings:{profile:{...PROFILE_DEFAULTS},pay:{...PAY_DEFAULTS},wx:{...WX_DEFAULTS},payrollExtras:{},fx:{},aeroline:{crewId:'',crewProfileID:0,crewType:''}}};
@@ -931,23 +1040,9 @@ async function saveTrip(e){e.preventDefault();const c=tripCalc($('tripStart').va
   const allowance=cashAmount>0?0:(c.layover/60)*Number(state.settings.pay.layoverRate||0),t=normalizeTrip({...old,id,name:upper($('tripName').value)||tripAutoName(start),start,end,trip:c.trip,duty:c.duty,layover:c.layover,allowance,cashAmount,cashCurrency,cashFxRate,cashFxDate,cashFxTo:target,cashConverted,tripFxMadRate,tripFxDate,tripFxTo:target,tripFxTripStartDate:startDate,remarks:$('tripRemarks').value,manualOverride:true,revision:nextRevision(old),createdAt:old?.createdAt||new Date().toISOString(),updatedAt:new Date().toISOString()});await DB.put('trips',t);await DB.recordLedger('trips',id,old?'edit':'create');await reloadStore('trips');markDirty();resetTrip();renderTrips();renderPayroll()}
 
 function tripAutoName(start){const d=new Date(start);return Number.isFinite(d.getTime())?`TRIP ${d.toLocaleDateString('en-GB',{month:'long',year:'numeric'}).toUpperCase()}`:'TRIP'}
-async function autoDetectTrips(){const home=upper(state.settings.profile.homeBase||'CMN'),acts=state.activities.filter(a=>a.status!=='DELETED').sort(byDateTime),newTrips=[];let open=null;for(const a of acts){if((a.type===TYPES.DHD||a.type===TYPES.DHP)&&upper(a.dep)===home&&upper(a.arr)&&upper(a.arr)!==home){const s=dateAt(a.date,a.report||a.schedOut||'00:00');if(s&&!open)open={start:s,station:a.arr}}if(open&&(a.type===TYPES.DHD||a.type===TYPES.DHP)&&upper(a.arr)===home){const e=endDateAt(a.date,a.report||a.schedOut||'00:00',a.release||a.schedIn||a.report||'00:00');if(e&&e>open.start){const c=tripCalc(open.start.toISOString().slice(0,16),e.toISOString().slice(0,16));newTrips.push(normalizeTrip({id:DB.newId('trip'),name:`${upper(open.station)} ${open.start.toLocaleDateString('en-GB',{month:'long',year:'numeric',timeZone:'UTC'}).toUpperCase()}`,start:open.start.toISOString().slice(0,16),end:e.toISOString().slice(0,16),layover:c.layover,allowance:c.layover/60*Number(state.settings.pay.layoverRate||0),source:'auto'}));open=null}}}for(const t of newTrips){if(!state.trips.some(x=>x.name===t.name&&x.start===t.start))await DB.put('trips',t)}await reloadStore('trips');renderTrips();alert(`${newTrips.length} trip candidate(s) detected.`)}
+async function autoDetectTrips(){const home=upper(state.settings.profile.homeBase||'CMN'),acts=operationalEntriesForTrips(state.activities).sort(byDateTime),newTrips=[];let open=null;for(const a of acts){if((a.type===TYPES.DHD||a.type===TYPES.DHP)&&upper(a.dep)===home&&upper(a.arr)&&upper(a.arr)!==home){const s=dateAt(a.date,a.report||a.schedOut||'00:00');if(s&&!open)open={start:s,station:a.arr}}if(open&&(a.type===TYPES.DHD||a.type===TYPES.DHP)&&upper(a.arr)===home){const e=endDateAt(a.date,a.report||a.schedOut||'00:00',a.release||a.schedIn||a.report||'00:00');if(e&&e>open.start){const c=tripCalc(open.start.toISOString().slice(0,16),e.toISOString().slice(0,16));newTrips.push(normalizeTrip({id:DB.newId('trip'),name:`${upper(open.station)} ${open.start.toLocaleDateString('en-GB',{month:'long',year:'numeric',timeZone:'UTC'}).toUpperCase()}`,start:open.start.toISOString().slice(0,16),end:e.toISOString().slice(0,16),layover:c.layover,allowance:c.layover/60*Number(state.settings.pay.layoverRate||0),source:'auto'}));open=null}}}for(const t of newTrips){if(!state.trips.some(x=>x.name===t.name&&x.start===t.start))await DB.put('trips',t)}await reloadStore('trips');renderTrips();alert(`${newTrips.length} trip candidate(s) detected.`)}
 
-
-function renderDutyOverview(){
-  const todayKey=today(),todayBox=$('todayDutyCard'),nextBox=$('nextDutiesCard');
-  if(!todayBox||!nextBox)return;
-  const todayRows=state.activities.filter(a=>a.status!=='DELETED'&&a.date===todayKey&&(rosterVisible(a)||logbookVisible(a))).sort(byDateTime);
-  if(!todayRows.length)todayBox.innerHTML='<div class="hint">No duty recorded for today.</div>';
-  else todayBox.innerHTML=todayRows.map(a=>`<div class="activity${a.status==='COMPLETED'?' completed':''}"><div><div class="title">${esc(activityTitle(a))}</div><div class="meta">${esc(activityTime(a))}${a.report?' · Report '+esc(a.report)+'Z':''}${a.release?' · End '+esc(a.release)+'Z':''}</div></div><div class="right">${a.status==='COMPLETED'?'<span class="pill good">COMPLETED</span>':a.type===TYPES.OFF?'<span class="pill good">OFF</span>':'<span class="pill">PLANNED</span>'}</div></div>`).join('');
-  const now=new Date(),sessions=buildDutySessions(state.activities).filter(s=>s.end>=now).sort((a,b)=>a.start-b.start).slice(0,6);
-  const futureOff=state.activities.filter(a=>a.type===TYPES.OFF&&a.status!=='DELETED'&&dateAt(a.date,'12:00')>=now).sort(byDateTime).slice(0,6);
-  const rows=[...sessions.map(s=>({kind:'duty',date:s.date,start:s.start,end:s.end,items:s.items})),...futureOff.map(a=>({kind:'off',date:a.date,start:dateAt(a.date,'00:00'),end:dateAt(a.date,'23:59'),items:[a]}))].sort((a,b)=>a.start-b.start).slice(0,6);
-  if(!rows.length)nextBox.innerHTML='<div class="hint">No upcoming duties.</div>';
-  else nextBox.innerHTML=rows.map(r=>{if(r.kind==='off')return `<div class="activity"><div><div class="title">DAY OFF</div><div class="meta">${esc(displayDate(r.date))}</div></div><div class="right"><span class="pill good">OFF</span></div></div>`;const flights=r.items.filter(x=>x.type===TYPES.FLIGHT),first=flights[0],last=flights.at(-1),title=flights.length?(flights.map(x=>displayFlightNo(x.flightNo)).filter(Boolean).join(' / ')+' · '+(first?.dep||'')+(last?.arr?' → '+last.arr:'')):(r.items.map(activityTitle).join(' / '));return `<div class="activity"><div><div class="title">${esc(title)}</div><div class="meta">${esc(displayDate(r.date))} · ${esc(r.start.toISOString().slice(11,16))}–${esc(r.end.toISOString().slice(11,16))} Z · ${r.items.length} activit${r.items.length===1?'y':'ies'}</div></div><div class="right"><span class="pill">${flights.length} sector${flights.length===1?'':'s'}</span></div></div>`}).join('');
-}
-
-async function renderTotals(){renderDutyOverview();const log=state.activities.filter(a=>logbookVisible(a)),flights=log.filter(a=>a.type===TYPES.FLIGHT),sims=log.filter(a=>a.type===TYPES.SIM),sum=(arr,fn)=>arr.reduce((n,x)=>n+fn(x),0),total=sum(flights,actualBlockMinutes),a320=flights.filter(a=>/A32/.test(upper(a.aircraftType))),cards=[['Total Flight',fmt(total)],['A320 Total',fmt(sum(a320,actualBlockMinutes))],['A320 PIC',fmt(sum(a320,picMinutes))],['A320 SIC',fmt(sum(a320,sicMinutes))],['Flight Instruction',fmt(sum(flights,flightInstructionMinutes))],['Simulator',fmt(sum(sims,simulatorMinutes))],['Sim Instruction',fmt(sum(sims,simInstructionMinutes))],['Left Seat Flight',fmt(sum(flights.filter(a=>a.seatPosition==='Left'),actualBlockMinutes))],['Right Seat Flight',fmt(sum(flights.filter(a=>a.seatPosition==='Right'),actualBlockMinutes))]];$('totalCards').innerHTML=cards.map(([n,v])=>`<div class="metric"><strong>${v}</strong><span>${n}</span></div>`).join('');const now=new Date(),month=currentMonth(),year=String(now.getUTCFullYear()),sixMonthsAgo=new Date(now);sixMonthsAgo.setUTCMonth(sixMonthsAgo.getUTCMonth()-6);sixMonthsAgo.setUTCHours(0,0,0,0);const last6m=sum(flights.filter(a=>dateAt(a.date,a.out||a.off||a.schedOut||'00:00')>=sixMonthsAgo),actualBlockMinutes),period=[['This Month — Flight',sum(flights.filter(a=>monthKey(a.date)===month),actualBlockMinutes)],['This Year — Flight',sum(flights.filter(a=>String(a.date).startsWith(year)),actualBlockMinutes)],['Last 28 days — Flight',rollingFlight(28,state.activities,now)],['Last 90 days — Flight',rollingFlight(90,state.activities,now)],['Last 6 months — Flight',last6m],['Last 365 days — Flight',rollingFlight(365,state.activities,now)]];$('periodTotals').innerHTML=period.map(([n,v])=>`<div><span>${n}</span><strong>${fmt(v)}</strong></div>`).join('');const approachTypes=['CAT3','ILS','LOC','RNAV','RNAV AR','VOR','NDB','CRCL','VIS','GOA'],counts=Object.fromEntries(approachTypes.map(x=>[x,0]));for(const a of flights){const k=upper(a.approachType);if(k in counts)counts[k]++}$('approachTotals').innerHTML=approachTypes.map(k=>`<div><span>${esc(k)}</span><strong>${counts[k]}</strong></div>`).join('');const vals=[['Duty — 7 consecutive days',rollingDuty(7,state.activities,now),3600],['Duty — 14 consecutive days',rollingDuty(14,state.activities,now),6600],['Duty — 28 consecutive days',rollingDuty(28,state.activities,now),11400],['Flight time — 28 consecutive days',rollingFlight(28,state.activities,now),6000],['Flight time — calendar year',calendarYearFlight(state.activities,now),54000],['Flight time — 12 calendar months',rollingCalendar12Flight(state.activities,now),60000]];$('ftlRows').innerHTML=vals.map(([n,v,l])=>{const s=ftlState(v,l);return`<div><span>${n}</span><strong class="ftl-${s.state}">${fmt(v)} / ${fmt(l)}</strong></div>`}).join('')}
+async function renderTotals(){const log=state.activities.filter(a=>logbookVisible(a)),flights=log.filter(a=>a.type===TYPES.FLIGHT),sims=log.filter(a=>a.type===TYPES.SIM),sum=(arr,fn)=>arr.reduce((n,x)=>n+fn(x),0),total=sum(flights,actualBlockMinutes),a320=flights.filter(a=>/A32/.test(upper(a.aircraftType))),cards=[['Total Flight',fmt(total)],['A320 Total',fmt(sum(a320,actualBlockMinutes))],['A320 PIC',fmt(sum(a320,picMinutes))],['A320 SIC',fmt(sum(a320,sicMinutes))],['Flight Instruction',fmt(sum(flights,flightInstructionMinutes))],['Simulator',fmt(sum(sims,simulatorMinutes))],['Sim Instruction',fmt(sum(sims,simInstructionMinutes))],['Left Seat Flight',fmt(sum(flights.filter(a=>a.seatPosition==='Left'),actualBlockMinutes))],['Right Seat Flight',fmt(sum(flights.filter(a=>a.seatPosition==='Right'),actualBlockMinutes))]];$('totalCards').innerHTML=cards.map(([n,v])=>`<div class="metric"><strong>${v}</strong><span>${n}</span></div>`).join('');const now=new Date(),month=currentMonth(),year=String(now.getUTCFullYear()),sixMonthsAgo=new Date(now);sixMonthsAgo.setUTCMonth(sixMonthsAgo.getUTCMonth()-6);sixMonthsAgo.setUTCHours(0,0,0,0);const last6m=sum(flights.filter(a=>dateAt(a.date,a.out||a.off||a.schedOut||'00:00')>=sixMonthsAgo),actualBlockMinutes),period=[['This Month — Flight',sum(flights.filter(a=>monthKey(a.date)===month),actualBlockMinutes)],['This Year — Flight',sum(flights.filter(a=>String(a.date).startsWith(year)),actualBlockMinutes)],['Last 28 days — Flight',rollingFlight(28,state.activities,now)],['Last 90 days — Flight',rollingFlight(90,state.activities,now)],['Last 6 months — Flight',last6m],['Last 365 days — Flight',rollingFlight(365,state.activities,now)]];$('periodTotals').innerHTML=period.map(([n,v])=>`<div><span>${n}</span><strong>${fmt(v)}</strong></div>`).join('');const approachTypes=['CAT3','ILS','LOC','RNAV','RNAV AR','VOR','NDB','CRCL','VIS','GOA'],counts=Object.fromEntries(approachTypes.map(x=>[x,0]));for(const a of flights){const k=upper(a.approachType);if(k in counts)counts[k]++}$('approachTotals').innerHTML=approachTypes.map(k=>`<div><span>${esc(k)}</span><strong>${counts[k]}</strong></div>`).join('');const vals=[['Duty — 7 consecutive days',rollingDuty(7,state.activities,now),3600],['Duty — 14 consecutive days',rollingDuty(14,state.activities,now),6600],['Duty — 28 consecutive days',rollingDuty(28,state.activities,now),11400],['Flight time — 28 consecutive days',rollingFlight(28,state.activities,now),6000],['Flight time — calendar year',calendarYearFlight(state.activities,now),54000],['Flight time — 12 calendar months',rollingCalendar12Flight(state.activities,now),60000]];$('ftlRows').innerHTML=vals.map(([n,v,l])=>{const s=ftlState(v,l);return`<div><span>${n}</span><strong class="ftl-${s.state}">${fmt(v)} / ${fmt(l)}</strong></div>`}).join('')}
 
 function fillSettings(){const p=state.settings.profile,pay=state.settings.pay,wx=state.settings.wx;$('setProfileName').value=p.profileName||'';$('setProfileRole').value=p.profileRole||'Captain';$('setHomeBase').value=p.homeBase||'CMN';$('setFlightPrefix').value=p.flightPrefix||'MAC';$('setAircraftPrefix').value=p.aircraftPrefix||'CN-NM';$('setCurrency').value=p.currency||'MAD';const map={payJoinDate:'joinDate',payBase:'base',payAllowance:'allowance',payTransport:'transport',payPos:'pos',payTelephone:'telephone',payUniform:'uniform',payMeal:'meal',payDeduction:'deduction',paySeniority2:'seniority2',paySeniority12:'seniority12',payT1Max:'t1Max',payT1Rate:'t1Rate',payT2Max:'t2Max',payT2Rate:'t2Rate',payT3Max:'t3Max',payT3Rate:'t3Rate',payT4Rate:'t4Rate',payTrainingRate:'trainingRate',payLayoverRate:'layoverRate',paySimAllowance:'simAllowance',paySimCredit:'simCredit',payGroundCredit:'groundCredit',payDayOffRate:'dayOffRate'};for(const [id,k] of Object.entries(map))$(id).value=pay[k];$('wxEnabled').value=wx.enabled?'yes':'no';$('wxLead').value=wx.leadMinutes;$('wxBefore').value=wx.beforeEtaHours;$('wxAfter').value=wx.afterEtaHours;const ac=state.settings.aeroline||{};$('aerolineMonth').value=$('aerolineMonth').value||rosterMonth;$('aerolineCrewId').value=ac.crewId||'';$('aerolineCrewProfileId').value=ac.crewProfileID||'';$('aerolineCrewType').value=ac.crewType||'';$('autoSyncEnabled').value=Cloud.autoEnabled()?'yes':'no';updateHeader()}
 async function renderSettings(){fillSettings();await renderBackupStatus();await renderCloudStatus()}
@@ -961,7 +1056,7 @@ async function applySnapshot(s){await DB.replaceAll('activities',s.activities||[
 function download(name,data,type='application/json'){const blob=data instanceof Blob?data:new Blob([data],{type}),u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),1000)}
 async function exportBackup(){const s=await snapshot();download(`PilotLog_v9_backup_${today()}.json`,JSON.stringify({schema:APP_SCHEMA,version:VERSION,exportedAt:new Date().toISOString(),...s},null,2))}
 async function restoreBackup(file){const p=JSON.parse(await file.text());if(p.schema!==APP_SCHEMA)throw new Error('Not a PilotLog 9 backup.');if(!confirm(`Restore PilotLog 9 backup from ${p.exportedAt||'unknown'}? Current PilotLog 9 data on this device will be replaced.`))return;await applySnapshot(p);Cloud.markDirty();Cloud.setAutoEnabled(false);await createBackup(true);alert('PilotLog 9 backup restored locally. Review it before Sync now.')}
-async function importV8File(file){showProgress('Importing v8 backup','Reading legacy backup…',5);try{const p=JSON.parse(await file.text());showProgress('Importing v8 backup','Unifying Roster and Logbook records…',25);const r=await importV8Backup(p,state.activities);showProgress('Importing v8 backup','Writing one authoritative activity database…',60);await DB.replaceAll('activities',r.activities);await DB.replaceAll('expiry',r.expiry);await DB.replaceAll('trips',r.trips);state.settings.profile={...state.settings.profile,...r.settings.profile};state.settings.pay={...state.settings.pay,...r.settings.pay};state.settings.payrollExtras=r.settings.payrollExtras||{};state.settings.fx=r.settings.fx||{};await saveSettings();showProgress('Importing v8 backup','Verifying new database…',90);await loadState();await createBackup(true);Cloud.markDirty();Cloud.setAutoEnabled(false);showProgress('Importing v8 backup','Complete',100);setTimeout(hideProgress,500);await renderView(activeView);alert(`v8 backup imported into PilotLog 9 copy.\n${r.stats.flights} legacy activity rows + ${r.stats.roster} roster rows unified into ${state.activities.length} authoritative activities.\n${state.expiry.length} Expiry · ${state.trips.length} Trips.\nPilotLog 8.9 was not modified.`)}catch(e){hideProgress();throw e}}
+async function importV8File(file){Cloud.setAutoEnabled(false);showProgress('Importing v8 backup','Reading and validating legacy backup…',5);try{const p=JSON.parse(String(await file.text()).replace(/^\uFEFF/,''));showProgress('Importing v8 backup','Building a clean authoritative database…',25);const r=await importV8Backup(p);if(!confirm(`Import this v8 backup as a CLEAN PilotLog 9 copy?\n\nLegacy entries retained: ${r.stats.flights}\nRoster: ${r.stats.rosterMerged} existing-flight links + ${r.stats.rosterAdded} planned sectors\nDuties: ${r.stats.duties}\nTrips: ${r.stats.trips}\nExpiry after semantic merge: ${r.expiry.length}\nTotal unified activities: ${r.activities.length}\n\nExisting local PilotLog 9 test data and its sync ledger will be replaced. PilotLog 8.9 is not touched. Auto Sync is OFF.`)){hideProgress();return}showProgress('Importing v8 backup','Writing one authoritative activity database…',60);await DB.replaceAll('activities',r.activities);await DB.replaceAll('expiry',r.expiry);await DB.replaceAll('trips',r.trips);await DB.replaceAll('ledger',[]);storeDrafts(r.drafts||[]);state.settings.profile={...Rules.PROFILE_DEFAULTS,...r.settings.profile};state.settings.pay={...PAY_DEFAULTS,...r.settings.pay};state.settings.payrollExtras=r.settings.payrollExtras||{};state.settings.fx=r.settings.fx||{};await saveSettings();if(r.settings.legacy)await DB.setSetting('legacy',r.settings.legacy);showProgress('Importing v8 backup','Verifying migrated records…',90);await loadState();const legacyRetained=state.activities.filter(a=>a.legacy?.v8Id).length,uniqueIds=new Set(state.activities.map(a=>a.id));if(legacyRetained!==r.stats.flights)throw new Error(`Post-write integrity check failed: expected ${r.stats.flights} legacy entries, found ${legacyRetained}.`);if(state.activities.length!==r.activities.length||uniqueIds.size!==state.activities.length)throw new Error('Post-write integrity check failed: unified activity count or IDs changed.');if(state.trips.length!==r.trips.length)throw new Error('Post-write integrity check failed: Trips count changed.');if(state.expiry.length!==r.expiry.length)throw new Error('Post-write integrity check failed: Expiry count changed.');await createBackup(true);Cloud.markDirty();showProgress('Importing v8 backup','Complete',100);setTimeout(hideProgress,500);await renderView(activeView);alert(`v8 backup imported and verified.\n\n${r.stats.flights} v8 entries retained 1:1.\nRoster: ${r.stats.rosterMerged} sectors linked to existing authoritative flights + ${r.stats.rosterAdded} planned sectors.\nDuties: ${r.stats.dutyAdded} standalone + ${r.stats.dutyEnriched} linked/enriched.\n${state.expiry.length} Expiry (${r.stats.expiryMerged} semantic duplicate${r.stats.expiryMerged===1?'':'s'} merged) · ${state.trips.length} Trips.\n${state.activities.length} authoritative activities total.${r.stats.drafts?`\n${r.stats.drafts} local draft restored.`:''}\n\nAuto Sync remains OFF. Review the data before Sync now.`)}catch(e){hideProgress();throw e}}
 async function importCompleteLogTenFile(file){
   showProgress('Complete LogTen migration','Reading migration package…',3);
   try{
