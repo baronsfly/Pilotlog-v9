@@ -1,31 +1,48 @@
-# PilotLog 9.0 RC4 — actual backup regression test
+# PilotLog 9.0 RC6 — regression report
 
-Test input: `pilotlog_backup_2026-09-01.json` exported by PilotLog 8.9.
+Test input: supplied real `pilotlog_backup_2026-09-01.json` (PilotLog Backup v8.9).
 
-## Automated assertions passed
-- JavaScript syntax: PASS
-- Main navigation targets present: Roster / Logbook / Payroll / Expiry / Trips / Totals / Settings: PASS
-- v8 legacy rows retained: 7,924 / 7,924
-- Roster sectors linked to existing authoritative Flights with v8.9 identity: 29
-- Genuinely unmatched Roster sectors added as planned: 19
-- Unified activities: 7,960
-- Unified activity IDs duplicated: 0
-- Trips: 168 / 168
-- Expiry input: 36
-- Expiry semantic duplicates merged: 6
-- Expiry output: 30
-- Active local draft retained: 1
-- Historical Flight total: 939,782 minutes before / 939,782 after
+## Migration / Payroll
+- Legacy entries: 7,924 retained.
+- Roster sectors: 29 linked to existing authoritative Flight entries, 19 retained as planned sectors.
+- Trips: 168.
+- Expiry: 36 source records → 30 after semantic duplicate merge.
+- August 2026 Credit H: **107:00**.
+- September 2026 Credit H: **102:15**.
+- Migration-level Credit H reference checks: PASS for 2026-08 and 2026-09.
 
-## Payroll regression
-- August 2026 operational source: 36 entries
-- August 2026 Credit H: 6,420 min = **107:00**
-- 31 August sectors: 2
-- MAC111 Credit H: 3:30
-- MAC112 Credit H: 3:30
-- August total before final MAC112: 103:30
-- September 2026 Credit H: 6,135 min = 102:15
+## Rigid Credit H source invariant
+A completed Flight was cloned and its Actual OUT/IN, OFF/ON, Actual Block, airborne time and stored credit were deliberately changed while Schedule OUT/IN were left unchanged.
+- Credit before mutation: 2:30.
+- Credit after actual-data mutation: 2:30.
+- Result: PASS — actual operational times cannot affect Flight Credit H.
 
-Result: ALL ASSERTIONS PASS.
+A synthetic Flight was then tested with only Schedule IN changed.
+- Credit changed from 2:30 to 3:00.
+- Result: PASS — Schedule OUT/IN are the driving source.
 
-The migration/payroll assertions execute the actual RC4 `Rules` and `Importers` modules extracted from the release `index.html` against the supplied real v8.9 backup.
+## Navigation / syntax
+- JavaScript syntax check: PASS.
+- Mobile 390×844 structural navigation test: Roster, Logbook, Payroll, Expiry, Trips, Totals, Settings — PASS; exactly one view active after every click.
+- Visible version badge: v9.0 RC6.
+
+
+## RC6 verified regression tests
+
+### Responsive UI parity against v8.9
+- Source reference inspected: PilotLog v8.9 CSS uses a bottom 7-tab navigation bar at viewport widths <= 900 px.
+- iPhone viewport 390x844: navigation box = x 0, y 778, width 390, height 66; fixed to bottom; body left padding 0. PASS.
+- Portrait tablet viewport 820x1180: navigation box = x 0, y 1114, width 820, height 66; fixed to bottom. PASS.
+- Desktop viewport 1180x820: left navigation rail retained. PASS.
+- Roster, Logbook, Payroll, Expiry, Trips, Totals, Settings: every tab clicked and corresponding view active/visible. PASS.
+- JavaScript page errors during the responsive/navigation test: none.
+
+### Real v8.9 backup payroll regression
+Test source: pilotlog_backup_2026-09-01.json (real v8.9 Full Backup).
+- Legacy entries retained: 7,924.
+- Unified activities: 7,960.
+- Roster links to existing flights: 29; planned sectors added: 19.
+- August 2026 Credit H: 107:00. PASS.
+- September 2026 Credit H: 102:15. PASS.
+- Mutation test: every August flight Actual OUT/IN, stored Actual Block, and imported credit were intentionally replaced with extreme values; August Credit H remained 107:00. PASS.
+- Therefore Flight Credit H is independent of actual times/actual block/imported flight credit and is driven by Scheduled OUT -> Scheduled IN.

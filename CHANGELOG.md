@@ -1,15 +1,20 @@
-# PilotLog 9.0 RC4
+# PilotLog 9.0 RC6
 
-- Corrected the v8.9 Full Backup migration Roster-link rule.
-- Historical LogTen/manual Flight records are now linked to their matching Roster sector by the same v8.9 fallback identity: date + flight number + From + To, when a strong completedEntryId/rosterItemId/AeroLINE key is unavailable.
-- The fallback is accepted only when the matching authoritative Flight is unique.
-- A Roster row does not need to already say `done` if an authoritative saved Flight exists; this matches v8.9 `savedEntryForRosterSector()` behavior.
-- No Credit H formula change was made. The fix corrects which already-saved Flight supplies Schedule OUT / Schedule IN to Roster-first Payroll.
-- Supplied real backup: Roster links increased from the incorrect RC3 value 5 to the correct 29; genuinely unmatched planned sectors reduced from 43 to 19.
-- Supplied real backup August 2026 Credit H corrected from RC3 test value 106:30 to **107:00**.
-- Verified final 31 August sector contributes 3:30, taking August from 103:30 to 107:00.
-- September 2026 Credit H remains 102:15.
-- Preserves all 7,924 legacy v8 entries, 168 Trips, 30 post-dedup Expiry records and 939,782 historical Flight minutes.
-- Unified activity IDs remain duplicate-free: 7,960 / 7,960 unique.
-- No UI/graphics/navigation change from RC3.
-- Service-worker cache bumped to `pilotlog9-rc4-v1`.
+## RC6 mobile UI parity fix
+- Restored PilotLog 8.9 responsive navigation behavior: primary navigation is a fixed bottom tab bar at widths <= 900 px (including iPhone/iPad portrait), not a left rail.
+- Desktop/wide-tablet left rail remains unchanged.
+- Flight Credit H invariant from RC5 is unchanged: Scheduled OUT -> Scheduled IN only; actual times are never a credit source.
+
+
+## Credit Hours hard lock
+- Flight Credit Hours are derived only from Schedule OUT → Schedule IN.
+- Actual OUT / IN, Actual Block, airborne time and imported/stored Flight credit can never be used as a fallback for Flight Credit H.
+- Existing 30-minute upward rounding and Morocco +50% logic are preserved.
+- Roster ↔ Logbook matching uses trailing flight-number digits (e.g. 3O337 = MAC337) plus date and route, matching the v8.9 workflow.
+- v8 backup migration now runs a Credit H regression check for every roster month and aborts if the migrated result differs from a direct scheduled-source reconstruction.
+- Import confirmation/completion displays the verified monthly Credit H values.
+
+## Cache hardening
+- Visible build badge bumped to v9.0 RC6.
+- Service worker cache bumped to `pilotlog9-rc6-v1`.
+- Service worker registration requests updates without HTTP cache, reducing the chance of an older RC build remaining active after GitHub Pages deployment.

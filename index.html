@@ -54,6 +54,70 @@ input,select,textarea{width:100%;border:1px solid var(--line2);border-radius:10p
   body{padding-left:74px}.app-header{margin-left:-74px;padding-left:calc(74px + 14px);padding-right:14px}.bottom-nav{width:74px;padding-left:4px;padding-right:4px}.bottom-nav button{font-size:9px;min-height:46px}.bottom-nav button:first-child{margin-top:57px}
   main{padding:13px 12px 28px}.form-grid,.form-grid.compact{grid-template-columns:1fr}.full{grid-column:auto}.metric-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.toolbar-grid{grid-template-columns:1fr}.section-head{align-items:stretch;flex-direction:column}.activity{grid-template-columns:1fr}.activity .right{align-items:flex-start;text-align:left}.modal-card{max-height:94vh}.review-row{grid-template-columns:1fr 1fr}.review-row [data-r="remarks"]{grid-column:1/-1}#appTitle{font-size:21px}.brand-mark{width:40px;height:40px;flex-basis:40px}
 }
+
+/* RC6 — mobile navigation parity with PilotLog v8.9.
+   On phones and portrait/smaller tablets the primary navigation is a bottom tab bar,
+   never a left rail. Desktop/wide tablet keeps the restrained left rail. */
+@media(max-width:900px){
+  body{
+    padding-left:0;
+    padding-bottom:calc(78px + env(safe-area-inset-bottom));
+  }
+  .app-header{
+    margin-left:0;
+    padding-left:16px;
+    padding-right:16px;
+  }
+  .header-row{max-width:none}
+  main{
+    padding:16px 14px 24px;
+    max-width:760px;
+  }
+  .bottom-nav{
+    top:auto;
+    left:0;right:0;bottom:0;
+    width:100%;
+    height:calc(66px + env(safe-area-inset-bottom));
+    padding:6px 6px env(safe-area-inset-bottom);
+    display:grid;
+    grid-template-columns:repeat(7,minmax(0,1fr));
+    overflow:visible;
+    border-right:0;
+    border-top:1px solid rgba(190,204,219,.9);
+    background:rgba(255,255,255,.94);
+    backdrop-filter:blur(18px) saturate(145%);
+    -webkit-backdrop-filter:blur(18px) saturate(145%);
+    box-shadow:0 -6px 20px rgba(23,47,73,.065);
+  }
+  .bottom-nav button{
+    width:100%;
+    min-height:54px;
+    margin:0;
+    padding:4px 1px 3px;
+    border-radius:10px;
+    font-size:9px;
+    line-height:1;
+    gap:3px;
+  }
+  .bottom-nav button:first-child{margin-top:0}
+  .bottom-nav svg{width:19px;height:19px}
+  .bottom-nav button.active{
+    background:transparent;
+    border-color:transparent;
+    color:#0e4f88;
+    box-shadow:none;
+  }
+  .bottom-nav button.active svg{stroke-width:1.9}
+}
+@media(max-width:520px){
+  #appTitle{font-size:21px}
+  .brand-mark{width:38px;height:38px;flex-basis:38px}
+  .brand-mark svg{width:29px;height:29px}
+  #appTagline{font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .bottom-nav{padding-left:2px;padding-right:2px}
+  .bottom-nav button{font-size:8px}
+}
+
 </style>
 </head>
 <body>
@@ -68,7 +132,7 @@ input,select,textarea{width:100%;border:1px solid var(--line2);border-radius:10p
         <p id="appTagline">PilotLog — your personal LogBook</p>
       </div>
     </div>
-    <span class="version">v9.0 RC4</span>
+    <span class="version">v9.0 RC6</span>
   </div>
 </header>
 
@@ -475,8 +539,14 @@ function rosterVisible(a){return a?.status!=='DELETED'&&a?.roster?.visible!==fal
 const MOROCCO_IATA=new Set(['CMN','RBA','RAK','FEZ','TNG','AGA','OUD','NDR','ESU','OZZ','ERH','EUN','TTU','BEM']);
 function isMorocco(code){return MOROCCO_IATA.has(upper(code))||upper(code).startsWith('GM')}
 function moroccoNightTrigger(a){if(a?.type!==TYPES.FLIGHT||!isMorocco(a.dep)||!a.schedOut||!a.date)return false;const z=dateAt(a.date,a.schedOut);if(!z)return false;let m=z.getUTCHours()*60+z.getUTCMinutes();try{const parts=new Intl.DateTimeFormat('en-GB',{timeZone:'Africa/Casablanca',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).formatToParts(z);m=Number(parts.find(x=>x.type==='hour')?.value||0)*60+Number(parts.find(x=>x.type==='minute')?.value||0)}catch{}return m>=18*60||m<5*60}
+function scheduledBlockMinutesForCredit(a){
+  // HARD INVARIANT: Flight Credit H is derived ONLY from Schedule OUT -> Schedule IN.
+  // Never fall back to actual OUT/IN, stored actual block, airborne time, or imported credit.
+  if(a?.type!==TYPES.FLIGHT||!a.schedOut||!a.schedIn)return 0;
+  return span(a.schedOut,a.schedIn);
+}
 function flightCreditMinutes(a,all=[]){
-  if(a?.type!==TYPES.FLIGHT)return 0;const base=span(a.schedOut,a.schedIn);if(!base)return 0;const rounded=Math.ceil(base/30)*30;
+  if(a?.type!==TYPES.FLIGHT)return 0;const base=scheduledBlockMinutesForCredit(a);if(!base)return 0;const rounded=Math.ceil(base/30)*30;
   let premium=moroccoNightTrigger(a);
   if(!premium&&!isMorocco(a.dep)){
     // A return sector inherits the Morocco night premium only from the immediately
@@ -580,7 +650,7 @@ function nightSegment(start,end,pointFn,step=2){if(!start||!end||end<=start)retu
 function nightMinutesForActivity(a,depInfo,arrInfo){if(a?.type!==TYPES.FLIGHT||!a.date||!depInfo||!arrInfo)return 0;let n=0;const out=dateAt(a.date,a.out),off=endDateAt(a.date,a.out,a.off),on=a.off?endDateAt(a.date,a.off,a.on):null,inn=a.on?endDateAt(a.date,a.on,a.in):null;if(out&&off)n+=nightSegment(out,off,()=>depInfo);if(off&&on)n+=nightSegment(off,on,f=>gcPoint(depInfo,arrInfo,f));if(on&&inn)n+=nightSegment(on,inn,()=>arrInfo);if(!n&&a.off&&a.on){const s=dateAt(a.date,a.off),e=endDateAt(a.date,a.off,a.on);n=nightSegment(s,e,f=>gcPoint(depInfo,arrInfo,f))}return n}
 function pfDayNightCounts(a,depInfo,arrInfo){if(a?.type!==TYPES.FLIGHT||a.pf!=='yes')return{dayTakeoffs:0,nightTakeoffs:0,dayLandings:0,nightLandings:0};const take=a.off?dateAt(a.date,a.off):null,land=a.on?endDateAt(a.date,a.off||a.on,a.on):null,depNight=take&&depInfo?solarAltitude(take,depInfo.lat,depInfo.lon)<-6:false,arrNight=land&&arrInfo?solarAltitude(land,arrInfo.lat,arrInfo.lon)<-6:false;return{dayTakeoffs:depNight?0:1,nightTakeoffs:depNight?1:0,dayLandings:arrNight?0:1,nightLandings:arrNight?1:0}}
 
-return {upper,mins,duration,fmt,span,shift,dateAt,endDateAt,monthKey,normalizeFlightNo,displayFlightNo,normalizeType,isCompleted,logbookVisible,rosterVisible,isMorocco,moroccoNightTrigger,flightCreditMinutes,activityCreditMinutes,actualBlockMinutes,airborneMinutes,simulatorMinutes,picMinutes,sicMinutes,flightInstructionMinutes,simInstructionMinutes,isTrainingPaySector,tierPay,seniorityPercent,activityStart,activityEnd,buildDutySessions,rollingDuty,rollingFlight,calendarYearFlight,rollingCalendar12Flight,ftlState,fdpLimit,rosterMonthAvailable,operationalEntriesForMonth,operationalEntriesForTrips,payrollForMonth,tripChargeableDuty,nightMinutesForActivity,pfDayNightCounts,TYPES,TYPE_LABEL,PAY_DEFAULTS,PROFILE_DEFAULTS,WX_DEFAULTS,AIRPORT_FALLBACK};
+return {upper,mins,duration,fmt,span,shift,dateAt,endDateAt,monthKey,normalizeFlightNo,displayFlightNo,normalizeType,isCompleted,logbookVisible,rosterVisible,isMorocco,moroccoNightTrigger,scheduledBlockMinutesForCredit,flightCreditMinutes,activityCreditMinutes,actualBlockMinutes,airborneMinutes,simulatorMinutes,picMinutes,sicMinutes,flightInstructionMinutes,simInstructionMinutes,isTrainingPaySector,tierPay,seniorityPercent,activityStart,activityEnd,buildDutySessions,rollingDuty,rollingFlight,calendarYearFlight,rollingCalendar12Flight,ftlState,fdpLimit,rosterMonthAvailable,operationalEntriesForMonth,operationalEntriesForTrips,payrollForMonth,tripChargeableDuty,nightMinutesForActivity,pfDayNightCounts,TYPES,TYPE_LABEL,PAY_DEFAULTS,PROFILE_DEFAULTS,WX_DEFAULTS,AIRPORT_FALLBACK};
 })();
 
 const Importers=(()=>{
@@ -661,7 +731,8 @@ async function importV8Backup(payload){
     add(a);if(legacyId)idMap.set(legacyId,a.id);
   }
   const flightsOnly=()=>activities.filter(x=>x.type===TYPES.FLIGHT);
-  const sameFlightIdentity=(a,r)=>a.type===TYPES.FLIGHT&&a.date===normalizeDate(r.date)&&normalizeFlightNo(a.flightNo)===normalizeFlightNo(r.flightNo)&&upper(a.dep)===upper(r.dep)&&upper(a.arr)===upper(r.arr);
+  const flightDigits=v=>{const m=upper(v).match(/(\d+)$/);return m?m[1]:upper(v)};
+  const sameFlightIdentity=(a,r)=>a.type===TYPES.FLIGHT&&a.date===normalizeDate(r.date)&&flightDigits(a.flightNo)===flightDigits(r.flightNo)&&upper(a.dep)===upper(r.dep)&&upper(a.arr)===upper(r.arr);
   const findRosterLink=r=>{
     // The v8 backup already contains the authoritative completedEntryId. Use it first.
     if(r.completedEntryId){const exact=byId.get(String(r.completedEntryId));if(exact?.type===TYPES.FLIGHT)return exact}
@@ -722,7 +793,32 @@ async function importV8Backup(payload){
   const migratedExpiry=dedupeExpiry(expiry.map(x=>normalizeExpiry(x))),expiryMerged=Math.max(0,expiry.length-migratedExpiry.length);
   const ids=activities.map(a=>a.id),uniqueIds=new Set(ids);if(uniqueIds.size!==ids.length)throw new Error('Migration integrity check failed: duplicate activity IDs.');
   const legacyFlightIds=new Set(flights.map(x=>String(x.id||'')).filter(Boolean)),retainedLegacyIds=new Set(activities.map(a=>String(a.legacy?.v8Id||'')).filter(Boolean));for(const id of legacyFlightIds)if(!retainedLegacyIds.has(id))throw new Error(`Migration integrity check failed: legacy entry ${id} was not retained.`);
-  return{activities,expiry:migratedExpiry,trips:migratedTrips,drafts:migratedDrafts,settings,stats:{flights:flights.length,roster:roster.length,duties:duties.length,rosterMerged,rosterAdded,dutyAdded,dutyEnriched,dutySkipped,expiry:expiry.length,expiryMerged,trips:trips.length,drafts:migratedDrafts.length}};
+  // Regression gate: for every month represented by the v8 Roster, the migrated Payroll
+  // Credit H must equal a direct v8-style reconstruction based on scheduled times only.
+  // This prevents a future refactor from silently reintroducing Actual Block into Credit H.
+  const rosterMonths=[...new Set(roster.map(r=>monthKey(normalizeDate(r.date))).filter(Boolean))].sort();
+  const creditChecks=[];
+  for(const month of rosterMonths){
+    const source=Rules.operationalEntriesForMonth(activities,month);
+    const migratedCredit=source.reduce((n,a)=>n+Rules.activityCreditMinutes(a,source,settings.pay),0);
+    // Rebuild the same authoritative v8 month directly from the source backup.
+    const monthRoster=roster.filter(r=>monthKey(normalizeDate(r.date))===month),monthFlights=flights.filter(f=>monthKey(normalizeDate(f.date))===month);
+    const sourceFlights=monthFlights.filter(f=>v8Type(f)===TYPES.FLIGHT),legacyRows=[];
+    const legacyDigits=v=>{const m=upper(v).match(/(\d+)$/);return m?m[1]:upper(v)};
+    for(const r of monthRoster){
+      let linked=null;
+      if(r.completedEntryId)linked=sourceFlights.find(f=>String(f.id||'')===String(r.completedEntryId))||null;
+      if(!linked&&r.id)linked=sourceFlights.find(f=>String(f.rosterItemId||'')===String(r.id))||null;
+      if(!linked&&r.aerolineKey)linked=sourceFlights.find(f=>String(f.rosterAerolineKey||'')===String(r.aerolineKey))||null;
+      if(!linked){const cand=sourceFlights.filter(f=>normalizeDate(f.date)===normalizeDate(r.date)&&legacyDigits(f.flightNo)===legacyDigits(r.flightNo)&&upper(f.dep)===upper(r.dep)&&upper(f.arr)===upper(r.arr));if(cand.length)linked=cand[0]}
+      legacyRows.push(cleanActivity({...(linked||r),id:`credit-check:${r.id||newId('r')}`,type:TYPES.FLIGHT,date:normalizeDate(linked?.date||r.date),status:'COMPLETED',source:linked?.source||r.source||'roster',flightNo:linked?.flightNo||r.flightNo||'',dep:linked?.dep||r.dep||'',arr:linked?.arr||r.arr||'',schedOut:linked?(linked.schedOut||''):(r.std||''),schedIn:linked?(linked.schedIn||''):(r.sta||'')}));
+    }
+    for(const f of monthFlights){const t=v8Type(f);if(t!==TYPES.FLIGHT&&String(f.source||'').toLowerCase()!=='logten')legacyRows.push(cleanActivity({...f,type:t,status:f.locked?'COMPLETED':'PLANNED'}))}
+    const legacyCredit=legacyRows.reduce((n,a)=>n+Rules.activityCreditMinutes(a,legacyRows,settings.pay),0);
+    if(migratedCredit!==legacyCredit)throw new Error(`Migration Credit H check failed for ${month}: ${Rules.fmt(migratedCredit)} migrated vs ${Rules.fmt(legacyCredit)} scheduled-source reference.`);
+    creditChecks.push({month,creditMins:migratedCredit});
+  }
+  return{activities,expiry:migratedExpiry,trips:migratedTrips,drafts:migratedDrafts,settings,stats:{flights:flights.length,roster:roster.length,duties:duties.length,rosterMerged,rosterAdded,dutyAdded,dutyEnriched,dutySkipped,expiry:expiry.length,expiryMerged,trips:trips.length,drafts:migratedDrafts.length,creditChecks}};
 }
 
 function trainingMatch(root,row,date,flightNo){const list=Array.isArray(root?.trainingCrewScheduleInfoList)?root.trainingCrewScheduleInfoList:[];return list.find(t=>normalizeDate(t.trainDate||t.trainDateString)===date&&(!flightNo||normalizeFlightNo(t.trainLocOrFlight)===normalizeFlightNo(flightNo)))||null}
@@ -895,7 +991,7 @@ const {importV8Backup,parseAeroline,mergeImportedActivities,parseLogTenTab,merge
 
 const $=id=>document.getElementById(id);
 const $$=sel=>[...document.querySelectorAll(sel)];
-const VERSION='9.0-rc4';
+const VERSION='9.0-rc6';
 const APP_SCHEMA='PilotLog9 Backup';
 const AIRPORT_SOURCE='https://raw.githubusercontent.com/mwgg/Airports/master/airports.json';
 let state={activities:[],expiry:[],trips:[],ledger:[],settings:{profile:{...PROFILE_DEFAULTS},pay:{...PAY_DEFAULTS},wx:{...WX_DEFAULTS},payrollExtras:{},fx:{},aeroline:{crewId:'',crewProfileID:0,crewType:''}}};
@@ -1056,7 +1152,7 @@ async function applySnapshot(s){await DB.replaceAll('activities',s.activities||[
 function download(name,data,type='application/json'){const blob=data instanceof Blob?data:new Blob([data],{type}),u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),1000)}
 async function exportBackup(){const s=await snapshot();download(`PilotLog_v9_backup_${today()}.json`,JSON.stringify({schema:APP_SCHEMA,version:VERSION,exportedAt:new Date().toISOString(),...s},null,2))}
 async function restoreBackup(file){const p=JSON.parse(await file.text());if(p.schema!==APP_SCHEMA)throw new Error('Not a PilotLog 9 backup.');if(!confirm(`Restore PilotLog 9 backup from ${p.exportedAt||'unknown'}? Current PilotLog 9 data on this device will be replaced.`))return;await applySnapshot(p);Cloud.markDirty();Cloud.setAutoEnabled(false);await createBackup(true);alert('PilotLog 9 backup restored locally. Review it before Sync now.')}
-async function importV8File(file){Cloud.setAutoEnabled(false);showProgress('Importing v8 backup','Reading and validating legacy backup…',5);try{const p=JSON.parse(String(await file.text()).replace(/^\uFEFF/,''));showProgress('Importing v8 backup','Building a clean authoritative database…',25);const r=await importV8Backup(p);if(!confirm(`Import this v8 backup as a CLEAN PilotLog 9 copy?\n\nLegacy entries retained: ${r.stats.flights}\nRoster: ${r.stats.rosterMerged} existing-flight links + ${r.stats.rosterAdded} planned sectors\nDuties: ${r.stats.duties}\nTrips: ${r.stats.trips}\nExpiry after semantic merge: ${r.expiry.length}\nTotal unified activities: ${r.activities.length}\n\nExisting local PilotLog 9 test data and its sync ledger will be replaced. PilotLog 8.9 is not touched. Auto Sync is OFF.`)){hideProgress();return}showProgress('Importing v8 backup','Writing one authoritative activity database…',60);await DB.replaceAll('activities',r.activities);await DB.replaceAll('expiry',r.expiry);await DB.replaceAll('trips',r.trips);await DB.replaceAll('ledger',[]);storeDrafts(r.drafts||[]);state.settings.profile={...Rules.PROFILE_DEFAULTS,...r.settings.profile};state.settings.pay={...PAY_DEFAULTS,...r.settings.pay};state.settings.payrollExtras=r.settings.payrollExtras||{};state.settings.fx=r.settings.fx||{};await saveSettings();if(r.settings.legacy)await DB.setSetting('legacy',r.settings.legacy);showProgress('Importing v8 backup','Verifying migrated records…',90);await loadState();const legacyRetained=state.activities.filter(a=>a.legacy?.v8Id).length,uniqueIds=new Set(state.activities.map(a=>a.id));if(legacyRetained!==r.stats.flights)throw new Error(`Post-write integrity check failed: expected ${r.stats.flights} legacy entries, found ${legacyRetained}.`);if(state.activities.length!==r.activities.length||uniqueIds.size!==state.activities.length)throw new Error('Post-write integrity check failed: unified activity count or IDs changed.');if(state.trips.length!==r.trips.length)throw new Error('Post-write integrity check failed: Trips count changed.');if(state.expiry.length!==r.expiry.length)throw new Error('Post-write integrity check failed: Expiry count changed.');await createBackup(true);Cloud.markDirty();showProgress('Importing v8 backup','Complete',100);setTimeout(hideProgress,500);await renderView(activeView);alert(`v8 backup imported and verified.\n\n${r.stats.flights} v8 entries retained 1:1.\nRoster: ${r.stats.rosterMerged} sectors linked to existing authoritative flights + ${r.stats.rosterAdded} planned sectors.\nDuties: ${r.stats.dutyAdded} standalone + ${r.stats.dutyEnriched} linked/enriched.\n${state.expiry.length} Expiry (${r.stats.expiryMerged} semantic duplicate${r.stats.expiryMerged===1?'':'s'} merged) · ${state.trips.length} Trips.\n${state.activities.length} authoritative activities total.${r.stats.drafts?`\n${r.stats.drafts} local draft restored.`:''}\n\nAuto Sync remains OFF. Review the data before Sync now.`)}catch(e){hideProgress();throw e}}
+async function importV8File(file){Cloud.setAutoEnabled(false);showProgress('Importing v8 backup','Reading and validating legacy backup…',5);try{const p=JSON.parse(String(await file.text()).replace(/^\uFEFF/,''));showProgress('Importing v8 backup','Building a clean authoritative database…',25);const r=await importV8Backup(p);if(!confirm(`Import this v8 backup as a CLEAN PilotLog 9 copy?\n\nLegacy entries retained: ${r.stats.flights}\nRoster: ${r.stats.rosterMerged} existing-flight links + ${r.stats.rosterAdded} planned sectors\nDuties: ${r.stats.duties}\nTrips: ${r.stats.trips}\nExpiry after semantic merge: ${r.expiry.length}\nTotal unified activities: ${r.activities.length}\nCredit H verification: ${(r.stats.creditChecks||[]).map(x=>`${x.month} ${Rules.fmt(x.creditMins)}`).join(' · ')||'n/a'}\n\nExisting local PilotLog 9 test data and its sync ledger will be replaced. PilotLog 8.9 is not touched. Auto Sync is OFF.`)){hideProgress();return}showProgress('Importing v8 backup','Writing one authoritative activity database…',60);await DB.replaceAll('activities',r.activities);await DB.replaceAll('expiry',r.expiry);await DB.replaceAll('trips',r.trips);await DB.replaceAll('ledger',[]);storeDrafts(r.drafts||[]);state.settings.profile={...Rules.PROFILE_DEFAULTS,...r.settings.profile};state.settings.pay={...PAY_DEFAULTS,...r.settings.pay};state.settings.payrollExtras=r.settings.payrollExtras||{};state.settings.fx=r.settings.fx||{};await saveSettings();if(r.settings.legacy)await DB.setSetting('legacy',r.settings.legacy);showProgress('Importing v8 backup','Verifying migrated records…',90);await loadState();const legacyRetained=state.activities.filter(a=>a.legacy?.v8Id).length,uniqueIds=new Set(state.activities.map(a=>a.id));if(legacyRetained!==r.stats.flights)throw new Error(`Post-write integrity check failed: expected ${r.stats.flights} legacy entries, found ${legacyRetained}.`);if(state.activities.length!==r.activities.length||uniqueIds.size!==state.activities.length)throw new Error('Post-write integrity check failed: unified activity count or IDs changed.');if(state.trips.length!==r.trips.length)throw new Error('Post-write integrity check failed: Trips count changed.');if(state.expiry.length!==r.expiry.length)throw new Error('Post-write integrity check failed: Expiry count changed.');await createBackup(true);Cloud.markDirty();showProgress('Importing v8 backup','Complete',100);setTimeout(hideProgress,500);await renderView(activeView);alert(`v8 backup imported and verified.\n\n${r.stats.flights} v8 entries retained 1:1.\nRoster: ${r.stats.rosterMerged} sectors linked to existing authoritative flights + ${r.stats.rosterAdded} planned sectors.\nDuties: ${r.stats.dutyAdded} standalone + ${r.stats.dutyEnriched} linked/enriched.\n${state.expiry.length} Expiry (${r.stats.expiryMerged} semantic duplicate${r.stats.expiryMerged===1?'':'s'} merged) · ${state.trips.length} Trips.\n${state.activities.length} authoritative activities total.${r.stats.drafts?`\n${r.stats.drafts} local draft restored.`:''}\nCredit H verified from Schedule OUT → Schedule IN only: ${(r.stats.creditChecks||[]).map(x=>`${x.month} ${Rules.fmt(x.creditMins)}`).join(' · ')||'n/a'}.\n\nAuto Sync remains OFF. Review the data before Sync now.`)}catch(e){hideProgress();throw e}}
 async function importCompleteLogTenFile(file){
   showProgress('Complete LogTen migration','Reading migration package…',3);
   try{
@@ -1145,7 +1241,7 @@ function bindEvents(){
 
 async function maybeWxNotification(){if(!state.settings.wx.enabled||Notification.permission!=='granted')return;const now=new Date(),lead=Number(state.settings.wx.leadMinutes||40),flights=state.activities.filter(a=>rosterVisible(a)&&a.type===TYPES.FLIGHT&&a.status!=='COMPLETED');for(const a of flights){const report=dateAt(a.date,a.report||shift(a.schedOut,-60));if(!report)continue;const delta=(report-now)/60000;if(delta>=lead-2&&delta<=lead+2){const key=`pilotlog9_wx_notified_${a.id}_${a.date}`;if(localStorage.getItem(key))continue;new Notification(`${displayFlightNo(a.flightNo)} · Pre-flight WX`,{body:`Report in ${Math.round(delta)} min · ${a.dep} → ${a.arr}. Open PilotLog for METAR/TAF filtered around ETA.`});localStorage.setItem(key,'1')}}}
 
-async function start(){bindNavigation();bindEvents();$('payrollMonth').value=currentMonth();try{const persistent=await navigator.storage?.persist?.();console.log('Persistent storage',persistent)}catch{}try{await DB.initializeDb();await loadState()}catch(e){console.error('PilotLog9 database initialization failed; navigation remains available',e)}fillSettings();await createBackup(false).catch(()=>{});await renderView(activeView);ensureAirportDb(false).catch(()=>{});renderCloudStatus();maybeWxNotification().catch(()=>{});setInterval(()=>maybeWxNotification().catch(()=>{}),60000);if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js').catch(e=>console.warn('Service worker unavailable',e));console.log(`PilotLog v${VERSION} loaded · ${DB.isFallbackMode()?'fallback storage':'IndexedDB core'}`)}
+async function start(){bindNavigation();bindEvents();$('payrollMonth').value=currentMonth();try{const persistent=await navigator.storage?.persist?.();console.log('Persistent storage',persistent)}catch{}try{await DB.initializeDb();await loadState()}catch(e){console.error('PilotLog9 database initialization failed; navigation remains available',e)}fillSettings();await createBackup(false).catch(()=>{});await renderView(activeView);ensureAirportDb(false).catch(()=>{});renderCloudStatus();maybeWxNotification().catch(()=>{});setInterval(()=>maybeWxNotification().catch(()=>{}),60000);if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js?v=9.0-rc6',{updateViaCache:'none'}).then(r=>r.update().catch(()=>{})).catch(e=>console.warn('Service worker unavailable',e));console.log(`PilotLog v${VERSION} loaded · ${DB.isFallbackMode()?'fallback storage':'IndexedDB core'}`)}
 start().catch(e=>{console.error('PilotLog9 startup nonfatal error',e);status($('aerolineStatus'),'Startup data layer error: '+e.message,'error')});
 </script>
 </body>
