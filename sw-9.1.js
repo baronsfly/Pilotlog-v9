@@ -1,4 +1,3 @@
-// Upgrade bridge from v8.9 to v9.1.
 const CACHE='pilotlog-v9.1';
 const ROOT=new URL('./',self.location).href;
 const INDEX=new URL('./index.html',self.location).href;

@@ -1,7 +1,8 @@
-const CACHE='pilotlog-v9.0';
+// Upgrade bridge from v9.0 to v9.1.
+const CACHE='pilotlog-v9.1';
 const ROOT=new URL('./',self.location).href;
 const INDEX=new URL('./index.html',self.location).href;
-const CORE=[ROOT,INDEX,new URL('./pilotlog-8.3.0.css',self.location).href,new URL('./pilotlog-9.0.js',self.location).href,new URL('./manifest.webmanifest',self.location).href];
+const CORE=[ROOT,INDEX,new URL('./pilotlog-8.3.0.css',self.location).href,new URL('./pilotlog-9.1.js',self.location).href,new URL('./manifest.webmanifest',self.location).href];
 self.addEventListener('install',event=>{event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(CORE)).then(()=>self.skipWaiting()))});
 self.addEventListener('activate',event=>{event.waitUntil((async()=>{for(const key of await caches.keys())if(key!==CACHE&&key.startsWith('pilotlog-'))await caches.delete(key);await self.clients.claim()})())});
 self.addEventListener('fetch',event=>{

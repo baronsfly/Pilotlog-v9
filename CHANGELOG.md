@@ -1,3 +1,16 @@
+# PilotLog v9.1 — Large-backup restore performance fix
+
+- Fixed the freeze/unresponsive state triggered after restoring a large v8.9 Full Backup into v9.0.
+- Root cause: Trips rendering rebuilt the complete multi-year operational dataset once for every saved trip.
+- Operational trip entries are now grouped once per render and reused.
+- Saved-trip entry resolution now uses one indexed lookup and precomputed activity time windows.
+- Verified with the supplied 8.9 MB backup: 7,928 Logbook entries, 48 Roster sectors, 17 duties, 168 Trips and 36 Expiry records migrate to 7,960 unique activities.
+- Verified that the optimized operational Trip projection returns the same 7,940 records in the same order as v9.0 logic.
+- Verified that all 168 displayed Trip names are identical to the v9.0 logic.
+- No UI, Payroll, Credit Hours, Totals, Roster, Logbook, Expiry or calculation rule changes.
+
+---
+
 # PilotLog v9.0 — Single authoritative database and calculation engine
 
 - Rebuilt the internal data layer directly from v8.9 without changing the established UI or CSS.

@@ -1,4 +1,4 @@
-PILOTLOG v9.0 — SINGLE AUTHORITATIVE DATABASE
+PILOTLOG v9.1 — SINGLE AUTHORITATIVE DATABASE
 ================================================
 
 BASE
@@ -25,7 +25,7 @@ MIGRATION / COMPATIBILITY
 -------------------------
 - Existing v8.9 Full Backup JSON files are accepted and migrated in one operation.
 - Legacy flights, roster sectors and duties are merged into unique activity records without losing their original IDs/source references.
-- A v9.0 Full Backup contains the single authoritative database rather than separate module datasets.
+- A v9.1 Full Backup contains the single authoritative database rather than separate module datasets.
 - Existing cloud snapshots with the prior section layout are accepted and migrated before merge; new snapshots transport the one database in verified chunks.
 - Weekly backup and recovery functions are retained as non-authoritative safety copies.
 
@@ -50,10 +50,18 @@ VISUAL PRESERVATION
 FILES
 -----
 - index.html
-- pilotlog-9.0.js
+- pilotlog-9.1.js
 - pilotlog-8.3.0.css
-- sw-9.0.js
+- sw-9.1.js
 - sw-8.9.js (cache upgrade bridge only)
 - manifest.webmanifest
 - README_v9.txt
 - CHANGELOG.md
+
+
+v9.1 RESTORE PERFORMANCE FIX
+----------------------------
+- Fixes a severe Trips rendering slowdown after restoring a large v8.9 backup.
+- Trip operational entries are built once and reused while rendering the Trips list instead of rebuilding the full multi-year operational history for every saved trip.
+- Added indexed trip-entry lookup for saved trip contents.
+- No UI, payroll, credit-hour, roster, logbook, trip, expiry, sync, or business-rule formula was changed.
