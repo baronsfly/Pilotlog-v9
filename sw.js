@@ -1,9 +1,8 @@
-const CACHE='pilotlog9-rc6-v1';
-const CORE=['./','./index.html','./manifest.webmanifest'];
-self.addEventListener('install',event=>event.waitUntil(caches.open(CACHE).then(c=>c.addAll(CORE)).then(()=>self.skipWaiting())));
-self.addEventListener('activate',event=>event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));
-self.addEventListener('fetch',event=>{
-  if(event.request.method!=='GET')return;
-  const fresh=new Request(event.request,{cache:'no-store'});
-  event.respondWith(fetch(fresh).then(response=>{const copy=response.clone();caches.open(CACHE).then(c=>c.put(event.request,copy)).catch(()=>{});return response}).catch(()=>caches.match(event.request).then(r=>r||caches.match('./index.html'))));
-});
+// PilotLog v9.1 development mode: do not cache application files.
+self.addEventListener('install',()=>self.skipWaiting());
+self.addEventListener('activate',event=>event.waitUntil((async()=>{
+  const keys=await caches.keys();
+  await Promise.all(keys.filter(k=>k.startsWith('pilotlog9-')).map(k=>caches.delete(k)));
+  await self.clients.claim();
+})()));
+self.addEventListener('fetch',()=>{});
