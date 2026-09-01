@@ -544,8 +544,8 @@ button:active,.filebtn:active{transform:translateY(1px)}
 
 /* PAYROLL */
 .payroll-month-field input[type="month"]{
-  -webkit-appearance:none;
-  appearance:none;
+  -webkit-appearance:auto;
+  appearance:auto;
   border:0;
   border-top:1px solid var(--pl-line-strong);
   border-bottom:1px solid var(--pl-line-strong);
@@ -557,6 +557,7 @@ button:active,.filebtn:active{transform:translateY(1px)}
   color:var(--pl-navy);
   padding:16px 8px;
 }
+.payroll-month-field input[type="month"]::-webkit-calendar-picker-indicator{opacity:1;cursor:pointer}
 .payroll-month-field input[type="month"]:focus{
   border-color:#8aa9c6;
   box-shadow:none;
@@ -748,6 +749,84 @@ button:active,.filebtn:active{transform:translateY(1px)}
 .draft-shelf-row>div{display:flex;gap:6px;flex-shrink:0}
 .draft-shelf-row button{padding:6px 9px;font-size:.76rem}
 @media(max-width:640px){.draft-shelf-row{align-items:flex-start;flex-direction:column}.draft-shelf-row>div{width:100%}.draft-shelf-row button{flex:1}}
+
+/* v9.3 — approved graphical Roster calendar only */
+.roster-calendar-card{padding:0;overflow:hidden}
+.roster-calendar-shell{padding:16px;background:#fff;touch-action:pan-y}
+.roster-year-row{display:flex;justify-content:center;margin-bottom:8px}
+.roster-year-row select{
+  width:auto;
+  min-width:92px;
+  border:0;
+  background:transparent;
+  color:var(--pl-navy);
+  font-size:16px;
+  font-weight:850;
+  text-align:center;
+  padding:5px 24px 5px 8px;
+}
+.roster-calendar-head{display:grid;grid-template-columns:42px minmax(0,1fr) 42px;align-items:center;gap:10px;text-align:center}
+.roster-calendar-head>div{display:flex;flex-direction:column;gap:3px}
+.roster-calendar-head b{color:var(--pl-navy);font-size:22px}
+.roster-calendar-head span{color:#6b7280;font-size:11px;font-weight:650}
+.roster-calendar-arrow{width:42px;height:42px;padding:0;border-radius:50%;background:#edf3f9;color:var(--pl-navy);font-size:27px;line-height:1}
+.roster-calendar-actions{display:flex;justify-content:flex-end;margin:12px 0 8px}
+.roster-calendar-actions button{padding:7px 12px}
+.roster-month-strip{display:flex;gap:7px;overflow-x:auto;padding:5px 1px 11px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.roster-month-strip::-webkit-scrollbar{display:none}
+.roster-month-chip{flex:0 0 auto;min-width:48px;padding:7px 9px;border-radius:999px;background:#eef3f8;color:#51657c;font-size:10px;font-weight:850}
+.roster-month-chip.active{background:var(--pl-navy);color:#fff}
+.roster-weekdays,.roster-calendar-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr))}
+.roster-weekdays{border-top:1px solid #e4ebf2;border-left:1px solid #e4ebf2}
+.roster-weekdays span{padding:8px 2px;text-align:center;border-right:1px solid #e4ebf2;color:#6b7280;font-size:9px;font-weight:850;letter-spacing:.03em}
+.roster-calendar-grid{border-top:1px solid #e4ebf2;border-left:1px solid #e4ebf2}
+.roster-calendar-day{
+  min-width:0;
+  min-height:82px;
+  padding:6px 4px;
+  border-radius:0;
+  border-right:1px solid #e4ebf2;
+  border-bottom:1px solid #e4ebf2;
+  background:#fff;
+  color:#203750;
+  text-align:left;
+  overflow:hidden;
+}
+.roster-calendar-day.outside{background:#f8fafc;color:#a4afbb}
+.roster-calendar-day.today{box-shadow:inset 0 0 0 2px #3b82f6}
+.roster-calendar-day.selected{background:var(--pl-navy);color:#fff;box-shadow:inset 0 0 0 2px var(--pl-navy)}
+.roster-day-number{display:block;margin-bottom:5px;font-size:11px;font-weight:850}
+.roster-day-events{display:flex;flex-direction:column;gap:3px;min-width:0}
+.roster-event,.roster-event-more{display:block;overflow:hidden;padding:2px 3px;border-radius:4px;font-size:8px;font-weight:800;line-height:1.2;text-overflow:ellipsis;white-space:nowrap}
+.roster-event-flight{background:#dbeafe;color:#1d4ed8}
+.roster-event-off{background:#e5e7eb;color:#4b5563}
+.roster-event-stby{background:#ffedd5;color:#9a3412}
+.roster-event-sim{background:#ede9fe;color:#6d28d9}
+.roster-event-positioning{background:#dcfce7;color:#166534}
+.roster-event-ground{background:#cffafe;color:#155e75}
+.roster-event-duty{background:#e0e7ff;color:#3730a3}
+.roster-event-more{background:transparent;color:#64748b;padding-left:0}
+.roster-calendar-day.selected .roster-event,.roster-calendar-day.selected .roster-event-more{background:rgba(255,255,255,.18);color:#fff}
+.roster-agenda{border-top:1px solid #dce5ee;padding:16px;background:#fbfcfe;scroll-margin-top:12px}
+.roster-agenda-title{color:var(--pl-navy);font-size:15px;font-weight:850;margin-bottom:7px}
+.roster-agenda-list{background:#fff;border:1px solid #e1e8ef;border-radius:12px;padding:0 12px;overflow:hidden}
+.roster-agenda-row{margin:0;padding:13px 3px}
+.roster-agenda-clickable{cursor:pointer;transition:background .15s ease,transform .15s ease}
+.roster-agenda-clickable:hover,.roster-agenda-clickable:focus{background:#eef5fb;outline:none}
+.roster-agenda-clickable:active{transform:scale(.992)}
+#addView{touch-action:pan-y}
+@media(max-width:640px){
+  .roster-calendar-shell{padding:13px 9px}
+  .roster-calendar-head{grid-template-columns:36px minmax(0,1fr) 36px}
+  .roster-calendar-arrow{width:36px;height:36px;font-size:24px}
+  .roster-calendar-head b{font-size:19px}
+  .roster-calendar-day{min-height:65px;padding:5px 2px}
+  .roster-day-number{font-size:10px;margin-bottom:3px}
+  .roster-event,.roster-event-more{font-size:7px;padding:2px}
+  .roster-agenda{padding:13px 9px}
+  .roster-agenda-list{padding:0 9px}
+  .roster-agenda-row{align-items:flex-start}
+}
 
 
 /* v8.4.0 — Logbook search / bulk lock / import progress */

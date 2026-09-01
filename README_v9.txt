@@ -1,4 +1,4 @@
-PILOTLOG v9.2 — SINGLE AUTHORITATIVE DATABASE
+PILOTLOG v9.3 — SINGLE AUTHORITATIVE DATABASE
 ================================================
 
 BASE
@@ -31,7 +31,7 @@ MIGRATION / COMPATIBILITY
 
 VERIFICATION WITH THE PROVIDED BACKUP
 -------------------------------------
-- 7,924 Logbook/activity entries preserved.
+- 7,928 Logbook/activity entries preserved.
 - 48 Roster sectors preserved.
 - 17 duty records preserved.
 - 168 Trips preserved.
@@ -43,16 +43,21 @@ VERIFICATION WITH THE PROVIDED BACKUP
 
 VISUAL PRESERVATION
 -------------------
-- pilotlog-8.3.0.css is byte-for-byte unchanged from v8.9.
-- index.html keeps the same page structure, controls and navigation; only the displayed version and JavaScript filename changed.
-- A non-UI v8.9 service-worker bridge replaces the old offline cache on devices already running v8.9.
+- The established PilotLog interface remains unchanged outside the Roster calendar requested for v9.3.
+- Roster uses the approved graphical month calendar: year selector, month strip, month swipe, selectable/deselectable days and the selected day's agenda below.
+- Each Roster activity row is directly clickable; separate Edit/Open buttons are not used in that agenda.
+- Payroll keeps its existing layout and restores the native month/year dropdown control without redesign.
+- Service-worker bridges replace older offline caches on devices already running an earlier version.
 
 FILES
 -----
 - index.html
-- pilotlog-9.2.js
+- pilotlog-9.3.js
 - pilotlog-8.3.0.css
-- sw-9.2.js
+- sw-9.3.js
+- sw-9.2.js (cache upgrade bridge only)
+- sw-9.1.js (cache upgrade bridge only)
+- sw-9.0.js (cache upgrade bridge only)
 - sw-8.9.js (cache upgrade bridge only)
 - manifest.webmanifest
 - README_v9.txt
@@ -75,3 +80,15 @@ v9.2 UI PERFORMANCE FIX
 - Logbook anchor lookup no longer scans every rendered row.
 - Logbook initially renders 400 entries at a time, with an explicit Load older entries control; search still runs against the full authoritative database and statistics still cover all matches.
 - No data schema, business rule, Payroll formula, Credit Hours rule, Roster logic, Trips formula, Expiry logic or visual layout was changed.
+
+
+v9.3 CHECKLIST UPDATE
+---------------------
+- Swipe right from Add Flight always returns to Logbook and saves the current draft first.
+- Entry drafts remain in the authoritative local database while navigating through Roster, Payroll, Trips or any other page.
+- Roster now uses the approved second graphical calendar with all months, year selection, swipe navigation, day selection/deselection and a detailed agenda below.
+- Complete Roster flight/activity rows are clickable; separate action buttons were removed from the agenda.
+- Trips cards, View Duties and Payroll read the same live Trip projection from PilotLogEngine; stored legacy layover values are not used as an independent calculation source.
+- Completed Roster flights use their final saved Flight Entry duty fields; planned Roster times are used only until completion.
+- Verified RBA 08/26 from the supplied backup: Trip 22:00, Duty 8:02 (482 minutes), Paid Layover 13:58 (838 minutes) in Trips, View Duties and Payroll.
+- Payroll uses PilotLogEngine projections and its native month/year dropdown is visible again without changing the surrounding design.

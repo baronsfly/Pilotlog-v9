@@ -1,3 +1,17 @@
+# PilotLog v9.3 — Approved Roster calendar / unified projections
+
+- Add Flight swipe right now saves the complete draft and always returns to Logbook.
+- Preserved partial Add Flight data while navigating to any other page; drafts remain inside the single authoritative database state.
+- Replaced the Roster list with the approved second graphical calendar: year selector, all-month strip, previous/next controls, horizontal month swipe, selectable/deselectable days and selected-day agenda.
+- Made each complete Roster activity row clickable and removed separate Open/Edit controls from that agenda.
+- Trips cards, View Duties and Payroll now consume the same live Trip projection from `PilotLogEngine`; obsolete stored Trip layover values no longer drive those pages.
+- Completed Roster flights retain the final saved Flight Entry values in operational projections; planned Roster times apply only to activities not yet completed.
+- Verified the agreed RBA 08/26 case from the supplied backup: 22:00 Trip, 8:02 Duty and 13:58 Layover everywhere.
+- Restored the native Payroll month/year dropdown without redesigning Payroll.
+- No changes to the database schema, stored entry fields, established Credit Hours, Payroll, Trip, Totals, Expiry, import, export or sync rules.
+
+---
+
 # PilotLog v9.2 — UI responsiveness / Logbook performance
 
 - Removed a second large-backup bottleneck in Logbook rendering.
