@@ -1,10 +1,8 @@
 {
-  "name": "PilotLog 9",
+  "name": "PilotLog Airline",
   "short_name": "PilotLog",
   "start_url": "./",
-  "scope": "./",
   "display": "standalone",
   "background_color": "#f4f7fb",
-  "theme_color": "#ffffff",
-  "description": "PilotLog 9 — unified operational logbook, roster, payroll and trips"
+  "theme_color": "#ffffff"
 }
