@@ -1,4 +1,4 @@
-PILOTLOG v9.7 — SIMULATORS IN LOGBOOK AND TOTALS
+PILOTLOG v9.8 — SIMULATOR CREDIT HOURS MANUAL OVERRIDE
 ================================================
 
 BASE

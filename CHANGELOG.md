@@ -1,3 +1,11 @@
+# PilotLog v9.8 — Simulator Credit Hours manual override
+
+- Fixed the Simulator editor so Credit Hours are no longer read-only.
+- Simulator Credit Hours still default from Settings for entries without a manual override.
+- Once the user saves a Simulator entry, the final Credit Hours value entered by the user is authoritative, including `0:00` for Trainee sessions.
+- Totals, Payroll, Logbook statistics and all downstream Credit Hours consumers use the saved manual Simulator credit value.
+- No flight Credit Hours formula, Simulator Time formula, roster logic, payroll rate, database key, import format, sync protocol or visual layout was changed.
+
 # PilotLog v9.7 — Simulator entries in Logbook and Totals
 
 ## v9.7
