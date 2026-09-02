@@ -1,3 +1,30 @@
+# PilotLog v9.6 — Central flight reconciliation and direct Logbook access
+
+## v9.6
+
+- Keeps the one operational database and central calculation engine as the only source for Roster, Logbook, Trips and Payroll.
+- Roster shows the calendar first, uses the Payroll-style month/year selector and moves AeroLINE Sync/options after the agenda.
+- Logbook entries open by touching the complete row; older rows load automatically before the end of the list.
+- Reconciles a unique LogTen/AeroLINE flight centrally from date, route and scheduled UTC times (15-minute controlled tolerance); ambiguous cases remain separate and appear under Settings → Data Integrity Check → “Da controllare”.
+- Leaves UTC editing, Roster swipe behavior and haptic feedback unchanged for the later phase.
+
+- Replaced the release-only month gesture with an interactive swipe: the calendar follows the finger during horizontal movement.
+- Added adjacent previous/current/next month panels so the incoming month is visible during the gesture.
+- Added a 240 ms ease-out snap, distance/velocity completion and snap-back for incomplete swipes.
+- Preserved vertical page scrolling and suppressed accidental day taps generated at the end of a swipe.
+- No database, calculation engine, business rule or non-Roster page was changed.
+
+---
+
+# PilotLog v9.4 — Roster calendar cache correction
+
+- Corrected the broken Roster calendar layout seen on Safari/iPhone.
+- Root cause: the v9.3 calendar CSS was published under the obsolete `pilotlog-8.3.0.css` filename, allowing an older cached stylesheet to be combined with the new calendar markup.
+- Renamed the stylesheet to `pilotlog-9.4.css`, the script to `pilotlog-9.4.js`, and advanced the offline cache to v9.4 so the approved layout is fetched as a new asset.
+- No application data, database schema, calculation engine, business rule or non-Roster page was changed.
+
+---
+
 # PilotLog v9.3 — Approved Roster calendar / unified projections
 
 - Add Flight swipe right now saves the complete draft and always returns to Logbook.

@@ -1,7 +1,7 @@
-const CACHE='pilotlog-v9.5';
+const CACHE='pilotlog-v9.6';
 const ROOT=new URL('./',self.location).href;
 const INDEX=new URL('./index.html',self.location).href;
-const CORE=[ROOT,INDEX,new URL('./pilotlog-9.5.css',self.location).href,new URL('./pilotlog-9.5.js',self.location).href,new URL('./manifest.webmanifest',self.location).href];
+const CORE=[ROOT,INDEX,new URL('./pilotlog-9.6.css',self.location).href,new URL('./pilotlog-9.6.js',self.location).href,new URL('./manifest.webmanifest',self.location).href];
 self.addEventListener('install',event=>{event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(CORE)).then(()=>self.skipWaiting()))});
 self.addEventListener('activate',event=>{event.waitUntil((async()=>{for(const key of await caches.keys())if(key!==CACHE&&key.startsWith('pilotlog-'))await caches.delete(key);await self.clients.claim()})())});
 self.addEventListener('fetch',event=>{

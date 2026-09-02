@@ -1,9 +1,9 @@
-PILOTLOG v9.3 — SINGLE AUTHORITATIVE DATABASE
+PILOTLOG v9.6 — CENTRAL FLIGHT RECONCILIATION
 ================================================
 
 BASE
 ----
-Built directly from PilotLog v8.9. The existing interface, CSS, fields, navigation, imports, exports and established business rules are preserved.
+Built directly from PilotLog v9.4. Database, fields, navigation, imports, exports and established business rules are unchanged.
 
 ARCHITECTURE
 ------------
@@ -52,9 +52,11 @@ VISUAL PRESERVATION
 FILES
 -----
 - index.html
-- pilotlog-9.3.js
-- pilotlog-8.3.0.css
-- sw-9.3.js
+- pilotlog-9.5.js
+- pilotlog-9.5.css
+- sw-9.5.js
+- sw-9.4.js (cache upgrade bridge only)
+- sw-9.3.js (cache upgrade bridge only)
 - sw-9.2.js (cache upgrade bridge only)
 - sw-9.1.js (cache upgrade bridge only)
 - sw-9.0.js (cache upgrade bridge only)
@@ -80,6 +82,22 @@ v9.2 UI PERFORMANCE FIX
 - Logbook anchor lookup no longer scans every rendered row.
 - Logbook initially renders 400 entries at a time, with an explicit Load older entries control; search still runs against the full authoritative database and statistics still cover all matches.
 - No data schema, business rule, Payroll formula, Credit Hours rule, Roster logic, Trips formula, Expiry logic or visual layout was changed.
+
+
+v9.5 FLUID ROSTER SWIPE
+-------------------------
+- The Roster calendar now follows the finger continuously while swiping.
+- Previous/current/next month panels slide with a 240 ms iOS-style snap animation.
+- Short swipes snap back; distance and velocity can complete the month change.
+- Vertical page scrolling remains available and accidental day selection after a swipe is suppressed.
+- No database, calculation, entry, Payroll, Trips, Logbook, Expiry, import, export or sync logic was changed.
+
+
+v9.4 ROSTER CALENDAR CACHE FIX
+------------------------------
+- Fixed the broken Roster layout on Safari/iPhone caused by reusing the old CSS filename.
+- The versioned pilotlog-9.4.css forces browsers and service workers to load the approved calendar rules.
+- No database, calculation, entry, Payroll, Trips, Logbook, Expiry, import, export or sync logic was changed.
 
 
 v9.3 CHECKLIST UPDATE
