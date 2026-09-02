@@ -1,9 +1,18 @@
-PILOTLOG v9.8 — SIMULATOR CREDIT HOURS MANUAL OVERRIDE
+PILOTLOG v9.9 — ROSTER HOME, PROFILE PHOTO AND COMPLETE TOTALS
 ================================================
+
+V9.9 UPDATE
+-----------
+- Reload opens Roster with the calendar first and only one month control.
+- An optional personal photo replaces the round PilotLog mark; the logo remains when no photo is loaded.
+- Payroll Result shows the authoritative DHM amount beside its conversion currency.
+- Aircraft experience is grouped by ICAO type and displays only recorded categories.
+- Approach totals accept preserved LogTen approach rows and quantities, including VOR/DME.
+- A corrected complete LogTen migration package can supplement the two approach rows found in the original SQLite archive without overwriting manually saved data.
 
 BASE
 ----
-Built directly from PilotLog v9.4. Database, fields, navigation, imports, exports and established business rules are unchanged.
+Built directly from PilotLog v9.8. Database, fields, navigation, imports, exports and established business rules are unchanged except for the v9.9 changes listed above.
 
 ARCHITECTURE
 ------------
@@ -52,11 +61,9 @@ VISUAL PRESERVATION
 FILES
 -----
 - index.html
-- pilotlog-9.5.js
-- pilotlog-9.5.css
-- sw-9.5.js
-- sw-9.4.js (cache upgrade bridge only)
-- sw-9.3.js (cache upgrade bridge only)
+- pilotlog-9.9.js
+- pilotlog-9.9.css
+- sw-9.9.js
 - sw-9.2.js (cache upgrade bridge only)
 - sw-9.1.js (cache upgrade bridge only)
 - sw-9.0.js (cache upgrade bridge only)

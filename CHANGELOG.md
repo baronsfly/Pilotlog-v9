@@ -1,3 +1,14 @@
+# PilotLog v9.9 — Roster home, profile photo, currency and experience totals
+
+- Opens on Roster after every reload and keeps the graphical calendar first.
+- Removes the duplicated large month heading; the native rotating month control remains.
+- Adds an optional personal header photo with automatic PilotLog-logo fallback.
+- Restores the Payroll Result split: authoritative MAD/DHM total plus a conversion total.
+- Builds the aircraft breakdown from every aircraft actually flown and groups stored variants under ICAO type designators.
+- Totals shows only time categories actually present for each aircraft type, with Simulator kept separate from Flight Time.
+- Totals now consumes preserved LogTen approach records including quantity and previously omitted types such as VOR/DME.
+- Manual saved values remain authoritative during re-import; approach supplementation cannot replace a manual selection or deletion.
+
 # PilotLog v9.8 — Simulator Credit Hours manual override
 
 - Fixed the Simulator editor so Credit Hours are no longer read-only.
