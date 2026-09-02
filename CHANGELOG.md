@@ -1,4 +1,12 @@
-# PilotLog v9.6 — Central flight reconciliation and direct Logbook access
+# PilotLog v9.7 — Simulator entries in Logbook and Totals
+
+## v9.7
+
+- Shows every saved simulator entry in Logbook, including rostered future simulators.
+- Includes simulator time in Totals, kept separate from flight time.
+- Retains all v9.6 central database, Roster, Logbook loading and flight-reconciliation changes.
+
+## v9.6
 
 ## v9.6
 

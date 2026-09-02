@@ -1,4 +1,4 @@
-PILOTLOG v9.6 — CENTRAL FLIGHT RECONCILIATION
+PILOTLOG v9.7 — SIMULATORS IN LOGBOOK AND TOTALS
 ================================================
 
 BASE
