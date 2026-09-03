@@ -1,3 +1,10 @@
+# PilotLog v9.10.1 — Complete LogTen import identity fix
+
+- Fixed complete LogTen migration verification where distinct LogTen rows could be merged against an existing activity by operational similarity.
+- Every LogTen row with a stable `logtenUniqueId` is now preserved by that exact identity.
+- No backup or migration package is modified.
+- Simulator OUT / IN behavior from v9.10 is unchanged.
+
 # PilotLog v9.10 — Simulator OUT / IN
 
 - Simulator editor uses the same OUT and IN fields as flights.
