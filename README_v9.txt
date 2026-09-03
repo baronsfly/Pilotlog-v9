@@ -1,4 +1,4 @@
-PILOTLOG v9.10 — SIMULATOR OUT / IN
+PILOTLOG v10.1 — CORE v1
 ================================================
 
 V9.9 UPDATE
@@ -17,9 +17,9 @@ Built directly from PilotLog v9.8. Database, fields, navigation, imports, export
 ARCHITECTURE
 ------------
 1. PilotLog now has one authoritative operational IndexedDB database: pilotlog9-authoritative-data.
-2. Every operational activity is stored once with one stable ID, its activity type and visibility/state flags.
+2. Every operational activity is stored once with one stable ID, its activity type and lifecycle state: PLANNED, OPEN or COMPLETED.
 3. A planned Roster flight and its completed Logbook flight are the same record. Completing it changes the state of that record; it does not create a linked copy.
-4. Roster, Logbook, Duty, Payroll, Trips, Dashboard and Totals consume filtered projections from the same activity collection.
+4. Roster and Logbook have no writable membership or visibility flags. They read the same activity record and differ only by functional view filters.
 5. Trips, Expiry, settings, payroll configuration, FX data, drafts and the sync ledger are stored in the same authoritative database state.
 6. Device/session credentials and safety backups remain separate from operational data and are not alternative authoritative sources.
 

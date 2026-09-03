@@ -1,3 +1,11 @@
+# PilotLog v10.1 — Core v1 activity identity
+
+- Removed separate Roster and Logbook visibility/membership state from activity records.
+- Roster and Logbook now read the same Core activity record through functional filters only.
+- Planned roster flight completion updates that record to COMPLETED without creating or linking a second flight.
+- Roster CSV, calendar, screenshot and AeroLINE imports now write through the single Core activity commit path.
+- Legacy Roster, Logbook and Duty stores are read only once for migration and are never runtime authorities.
+
 # PilotLog v9.10.1 — Complete LogTen import identity fix
 
 - Fixed complete LogTen migration verification where distinct LogTen rows could be merged against an existing activity by operational similarity.
