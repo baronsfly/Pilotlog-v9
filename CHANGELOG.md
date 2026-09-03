@@ -1,3 +1,11 @@
+# PilotLog v9.10 — Simulator OUT / IN
+
+- Simulator editor uses the same OUT and IN fields as flights.
+- Removed the Simulator Start / Simulator End relabeling.
+- Duty times remain separate from simulator OUT / IN.
+- Complete LogTen migration maps existing simulator session times to OUT / IN without modifying the backup file.
+- Simulator duration is read from OUT → IN. No Duty-to-Simulator time formula is used.
+
 # PilotLog v9.9 — Roster home, profile photo, currency and experience totals
 
 - Opens on Roster after every reload and keeps the graphical calendar first.

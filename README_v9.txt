@@ -1,4 +1,4 @@
-PILOTLOG v9.9 — ROSTER HOME, PROFILE PHOTO AND COMPLETE TOTALS
+PILOTLOG v9.10 — SIMULATOR OUT / IN
 ================================================
 
 V9.9 UPDATE
