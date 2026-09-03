@@ -1,3 +1,9 @@
+# PilotLog v9.10.2 — Simulator UI cleanup
+
+- Simulator editor: hide Flight-only OUT, OFF, ON, IN, Schedule Block and Block fields.
+- Simulator preview no longer shows Flight OUT/IN values.
+- No changes to Core, AeroLINE import, calculations, stored data, or other activity editors.
+
 # PilotLog v9.10.1 — Complete LogTen import identity fix
 
 - Fixed complete LogTen migration verification where distinct LogTen rows could be merged against an existing activity by operational similarity.
