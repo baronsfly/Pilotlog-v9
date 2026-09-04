@@ -1,4 +1,4 @@
-## v10.5
+## v10.6
 - Recovery bridge reruns independently of the old 10.3 repair flag.
 - Re-merges saved legacy 10.0 Entries into the authoritative Core as COMPLETED without overwriting stronger current/manual values.
 - Restores legacy Trips into Core values when missing.
