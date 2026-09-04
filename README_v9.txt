@@ -1,4 +1,4 @@
-PILOTLOG v10.1 — CORE v1
+PILOTLOG v10.3 — CORE v1
 ================================================
 
 V9.9 UPDATE
@@ -22,6 +22,12 @@ ARCHITECTURE
 4. Roster and Logbook have no writable membership or visibility flags. They read the same activity record and differ only by functional view filters.
 5. Trips, Expiry, settings, payroll configuration, FX data, drafts and the sync ledger are stored in the same authoritative database state.
 6. Device/session credentials and safety backups remain separate from operational data and are not alternative authoritative sources.
+
+V10.3 PERFORMANCE CORRECTION
+----------------------------
+- Core migration, flight reconciliation, Roster cleanup and the Data Integrity check use indexed identity buckets.
+- Opening PilotLog or the Roster no longer compares every archived flight with every other flight.
+- The activity identity, lifecycle and functional Roster/Logbook filters are unchanged.
 
 CALCULATION ENGINE
 ------------------
@@ -61,13 +67,9 @@ VISUAL PRESERVATION
 FILES
 -----
 - index.html
-- pilotlog-9.9.js
-- pilotlog-9.9.css
-- sw-9.9.js
-- sw-9.2.js (cache upgrade bridge only)
-- sw-9.1.js (cache upgrade bridge only)
-- sw-9.0.js (cache upgrade bridge only)
-- sw-8.9.js (cache upgrade bridge only)
+- pilotlog-10.3.js
+- pilotlog-10.3.css
+- sw-10.3.js
 - manifest.webmanifest
 - README_v9.txt
 - CHANGELOG.md
