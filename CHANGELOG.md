@@ -1,3 +1,9 @@
+## v10.5
+- Recovery bridge reruns independently of the old 10.3 repair flag.
+- Re-merges saved legacy 10.0 Entries into the authoritative Core as COMPLETED without overwriting stronger current/manual values.
+- Restores legacy Trips into Core values when missing.
+- Repairs completed DHD/DHP/Simulator/Ground/STBY rows and Training Sector / Instructor Flight Time.
+
 # PilotLog v10.2 — Core v1 activity identity
 
 - Removed separate Roster and Logbook visibility/membership state from activity records.
