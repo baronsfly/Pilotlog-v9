@@ -1,7 +1,7 @@
-PILOTLOG v11.4
+PILOTLOG v11.5
 ===============
 
-This build keeps the supplied v10.9 files unchanged and uses separate v11.4 assets.
+This build keeps the supplied v10.9 files unchanged and uses separate v11.5 assets.
 
 AUTHORITATIVE TIME FIELDS
 -------------------------
@@ -74,3 +74,14 @@ DATA AUTHORITY v11.4
 - Calculated fallback never becomes manual merely because the activity is saved.
 - On Duty: manual > source > Schedule OUT - 1:00.
 - Off Duty: manual > source > Schedule IN + 0:30.
+
+
+v11.5 DATA AUTHORITY / LOGTEN STATUS
+- LogTen closed records remain locked and COMPLETED.
+- LogTen unclosed records remain OPEN; their imported values are still trusted source values.
+- Imported LogTen fields are preserved as imported and are not replaced by AeroLINE or calculated fallbacks.
+- Manual authority is field-by-field. A manual field overrides source/calculated values without turning every field in the record into manual data.
+- 0 and 0:00 are real values, never treated as blank.
+- SIC auto value requires the activity role to be explicitly SIC.
+- Ground Instruction has no Block fallback: use a source value when available, otherwise leave it open for manual entry.
+- Totals and approaches do not infer completion from elapsed time or from source=LogTen; they follow Core activity status.
