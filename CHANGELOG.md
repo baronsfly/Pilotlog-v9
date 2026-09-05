@@ -1,3 +1,40 @@
+## v11.4
+- Trusted historical LogTen SFI/SFE > 0 now qualifies that simulator as user Instructor/Examiner for the 5:00 Credit proposal and Simulator Allowance, without guessing which checkbox role applied.
+- Core duplicate and LogTen merges now respect manual authority field-by-field instead of using whole-record manualOverride protection.
+- Field-level manual authority: saving a record no longer turns every populated field into a manual override.
+- AeroLINE re-import updates only fields that were not manually taken over; explicit manual fields remain authoritative.
+- On Duty / Off Duty preserve exact precedence: manual > source > calculated Schedule OUT -1:00 / Schedule IN +0:30.
+- Simulator trainer credit recalculation restored: Instructor/Examiner simulator proposes 5:00 unless Credit was explicitly manually overridden/imported.
+- Added field provenance metadata without duplicating operational values.
+
+## v11.3
+- Multi Pilot automatic calculation now reads Aircraft Type only; legacy `multiCrew` is discarded.
+- Ground Course GI Credit Hours fixed at exactly 5:00; TNE remains 0:00; removed configurable generic Ground Course credit setting.
+- Flight INSTRUCTION now forces Dual Given = Block unless a manual Dual Given override exists, independent of Auto Sync.
+- README corrected to match STBY, GI, Multi Pilot and Dual Given rules.
+
+## v11.2
+- Unified all activity editing into the single Duty / Activity editor; removed the separate Add Duty editor and its write path.
+- Totals now sum each activity's final Total Duty value directly; duty-session reconstruction remains only for FTL analysis.
+- AeroLINE Simulator trainer handling keeps one trainer name only; if the sole trainer is the profile pilot, Instructor is selected. Multiple trainer names leave Instructor Name blank.
+- Ground Course credit: GI = 5:00, TNE = 0:00, otherwise no automatic credit; manual values remain authoritative.
+- Multi-pilot aircraft detection reads only the aircraft type field.
+- LogTen DHD/DHP inference now asks for confirmation record by record.
+
+## v11.0 — Approved time fields and activity cards
+
+- Keeps the original v10.9 assets unchanged and runs from separate v11.0 JavaScript, CSS and service-worker files.
+- Adds the Time Group Settings table with Show on Total, Show on Card and retroactive Auto Sync; every option starts OFF and manual values, including 0:00, have priority.
+- Flight uses Schedule Block = Schedule IN − Schedule OUT, Block = IN − OUT, Air Time = ON − OFF, and Total Flight Time = Block. Night uses only OUT → IN with airport solar ephemerides.
+- Multi-pilot applies only to multicrew aircraft flights and never to Simulator activities.
+- PIC, PIC U/S, SIC, IFR, Dual Given and Dual Received follow their approved Block rules only when applicable or selected. INSTRUCTION replaces the old instruction-type labels.
+- Simulator Time is preserved as its own field and normally equals Schedule IN − Schedule OUT. SFI/SFE equals the final Simulator Time only when the single INSTRUCTOR/EXAMINER checkbox is selected.
+- A receiving Simulator activity receives no invented credit. Explicit imported/manual credit is preserved; INSTRUCTOR/EXAMINER proposes editable 5:00 credit and the Simulator payroll allowance.
+- LogTen instructor names are copied to Instructor Name without selecting the user-role checkbox and without inferring Examiner from remarks.
+- DHD and DHP share From, To, Start, End, Schedule Block, the single Total Duty field and editable Credit defaulting to 0:00. No DHD Time or duty-type-specific Total Duty fields are created.
+- Roster displays monthly TOT SCHEDULE, TOT DUTY and TOT CREDIT on one line, independently of the selected day. Multisector duty is counted once and manual Total Duty has priority.
+- Removed prohibited Simulator/Block/Flight/Duty substitution rules; totals sum the final field values.
+
 ## v10.9
 - Recovery bridge reruns independently of the old 10.3 repair flag.
 - Re-merges saved legacy 10.0 Entries into the authoritative Core as COMPLETED without overwriting stronger current/manual values.
@@ -844,3 +881,11 @@
 - Deletes are represented by absence in the authoritative snapshot. No replicated tombstone history is required by v7 central-database operation.
 - Manual **Sync now** remains available. Auto Sync remains independently configurable.
 - Kept PilotLog v5.11 visual baseline; no UI restyling.
+
+## v11.2
+- Simulator role selection split into separate INSTRUCTOR and EXAMINER controls.
+- SFI/SFE calculation now uses the user's Simulator Instructor/Examiner role; imported LogTen SFI/SFE values remain source-authoritative unless manually overridden.
+- Entry duration fields use native time controls for iPhone/iOS input.
+- Removed legacy duplicate `flight` operational field in favor of `airTime`.
+- Removed stored `trainingSector`, `instructionType`, and `instructorFlightTime` fields; Flight instruction uses the single `instruction` flag and `dualGiven` time group.
+- Removed the duplicate `scheduleTotal` field. `schedBlock` is the single Schedule Block value; legacy `scheduleTotal` is migrated into it only when `schedBlock` is absent.
