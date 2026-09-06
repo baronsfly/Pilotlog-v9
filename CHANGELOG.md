@@ -1,3 +1,9 @@
+## v11.9
+- AeroLINE Simulator import now reads the simulator airport/location directly from trainingCrewScheduleInfoList.trainLocOrFlight; no airport deduction is used for Simulator activities.
+- Roster now exposes an explicit Delete duty action. Flight duties delete all sectors in the selected duty group together; SIM/STBY/DHD/DHP/Ground/OFF delete the selected Core activity.
+- Delete duty shows a database-authority warning before deletion. If any selected activity is already a completed Logbook entry, the warning states that the same Core record will also disappear from Logbook, Totals, Payroll and Trips.
+- Roster duty deletion uses the existing deletion tombstone/sync ledger so a removed last-minute-change duty is not recreated by later sync.
+
 ## v11.8
 - Roster calendar day number fixed to the top-left corner of each calendar cell.
 - Roster month selector now uses the same top/bottom-line treatment as Payroll.

@@ -1,7 +1,7 @@
-PILOTLOG v11.8
+PILOTLOG v11.9
 ===============
 
-This build keeps the supplied v10.9 files unchanged and uses separate v11.8 assets.
+This build keeps the supplied v10.9 files unchanged and uses separate v11.9 assets.
 
 AUTHORITATIVE TIME FIELDS
 -------------------------
@@ -76,7 +76,7 @@ DATA AUTHORITY v11.4
 - Off Duty: manual > source > Schedule IN + 0:30.
 
 
-v11.8 DATA AUTHORITY / LOGTEN STATUS
+v11.9 DATA AUTHORITY / LOGTEN STATUS
 - LogTen closed records remain locked and COMPLETED.
 - LogTen unclosed records remain OPEN; their imported values are still trusted source values and remain included in Logbook, Totals, Payroll, exports and calculations.
 - Imported LogTen fields are preserved as imported and are not replaced by AeroLINE or calculated fallbacks.
@@ -87,7 +87,7 @@ v11.8 DATA AUTHORITY / LOGTEN STATUS
 - LogTen locked/open state is never an inclusion filter. The lock is only an editing-protection flag; source values remain usable in either state.
 
 
-PilotLog v11.8 — AeroLINE Simulator reporting / trainer rule
+PilotLog v11.9 — AeroLINE Simulator reporting / trainer rule
 - Simulator On Duty fallback only when AeroLINE has no explicit reporting time: Simulator Start - 1:30.
 - Simulator Off Duty fallback remains Simulator End + 0:30, unchanged from the existing release rule.
 - When AeroLINE trainerName contains the user among multiple trainers, store only the user name in Instructor Name and select Simulator Instructor. Other trainer names are not copied into the same Instructor field.
