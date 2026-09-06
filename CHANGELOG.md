@@ -1,4 +1,16 @@
-## v11.6
+## v11.8
+- Roster calendar day number fixed to the top-left corner of each calendar cell.
+- Roster month selector now uses the same top/bottom-line treatment as Payroll.
+- Roster Duty Type remains editable when an activity is opened from Roster.
+- Roster monthly summary now shows Scheduled Block Hours and Actual Block Hours separately; actual stays zero until real block data exist. Core source authority remains manual > LogTen > AeroLINE.
+- Totals now show Day Takeoffs and Night Takeoffs.
+- Aircraft registration lookup added through the public ADSBdb registration endpoint; the existing Aircraft Type field is pre-filled with the returned detailed type/variant and remains manually editable. Lookup failure leaves manual entry available.
+- Add Entry always starts a fresh activity instead of reopening the last edited activity/draft state.
+- Payroll result currency totals are aligned on the same visual row/baseline.
+- Trip cash received can be removed again; when cash is zero, layover allowance returns to MAD/DHM and saved cash-derived conversion state is cleared.
+- LogTen locked/open is no longer used as an inclusion filter for Logbook, Totals, Payroll, exports, trip calculations, or other operational result projections. Lock remains only editing protection.
+
+## v11.7
 - Simulator-specific AeroLINE reporting fallback: Start - 1:30; Off Duty remains End + 0:30.
 - If AeroLINE trainerName contains the logged-in/user profile among multiple trainers, only that matched self name is stored in Instructor Name and Simulator Instructor is selected.
 - No other duty, flight, LogTen, credit, or calculation rules changed.
