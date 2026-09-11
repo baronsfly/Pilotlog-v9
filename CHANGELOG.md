@@ -1,6 +1,14 @@
-# v12.3
+## v12.5
 
-Logbook locked in verde; lock esteso agli editor Roster; Aircraft ID 18 caratteri; spazi nei nomi; Remarks più ampio; categorie CAT accorpate; filtro ICAO dai Totals; Roster con Z/MAR/L e interfaccia semplificata; tassazione per componente con Payroll after tax. Vedere AGGIORNAMENTO.txt per verifiche e dettagli.
+- Packaging fix: deployment ZIP now contains app files at ZIP root, not inside an extra PilotLog_v12.x folder.
+- Version references, visible badge, JS, CSS and Service Worker updated to v12.5.
+- MAC / IBC payroll regime implementation retained from v12.4.
+
+## v12.4
+- Advanced the build/version after the 12.3 build; no version number is reused.
+- Updated visible app version badge to v12.4.
+- Renamed runtime CSS/JS/Service Worker assets to 12.4 and updated cache registration.
+- Keeps the MAC / IBC Payroll Regime selector in Settings; IBC behavior remains unchanged.
 
 ## v11.9
 - AeroLINE Simulator import now reads the simulator airport/location directly from trainingCrewScheduleInfoList.trainLocOrFlight; no airport deduction is used for Simulator activities.
@@ -925,3 +933,22 @@ Logbook locked in verde; lock esteso agli editor Roster; Aircraft ID 18 caratter
 - Removed legacy duplicate `flight` operational field in favor of `airTime`.
 - Removed stored `trainingSector`, `instructionType`, and `instructorFlightTime` fields; Flight instruction uses the single `instruction` flag and `dualGiven` time group.
 - Removed the duplicate `scheduleTotal` field. `schedBlock` is the single Schedule Block value; legacy `scheduleTotal` is migrated into it only when `schedBlock` is absent.
+
+
+## v12.3
+- Added Settings > Payroll Regime with exactly two choices: MAC and IBC.
+- Kept the existing IBC payroll calculation unchanged.
+- Added MAC tax-protected payroll calculation based on the supplied 2026 Air Arabia Maroc payslips: taxable/non-taxable components, CNSS, AMO, CIMR, Assurance Maladie, professional-expense deduction, net imposable and IR.
+- MAC gross-up preserves the contractual regular-pay net target; positive arrears/adjustments are taxable and not gross-protected.
+- Added editable MAC family-deduction count.
+- Payroll automatically renders the selected regime and stores the regime when the month is recalculated.
+- No fallback between MAC and IBC.
+
+## v12.6
+- Totals: A319 and A320 combined into one A320 Family row.
+- Totals: removed Total recorded approaches summary row.
+- LogTen: copy-only time fields no longer backfilled by Auto Sync; locked state no longer blocks LogTen source re-import repair.
+- Roster duty editor: for DHD, DHP, Ground Course, STBY and Simulator, Type of Duty spans the full row and Duty On/Off share the right column.
+- Entry UI: Core activity ID hidden.
+- Payroll settings: legacy Base-to-Deduction inputs regrouped as Fix Salary; seniority percentage inputs removed from the UI.
+- Expiry: list action buttons removed; open the licence/certificate itself, autosave changes, with Lock/Delete inside the selected item.
