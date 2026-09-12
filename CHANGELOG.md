@@ -1,3 +1,8 @@
+## v13.5
+
+- Add: Total Duty remains visible, manual Duty values survive autosave and reopening, and Duty On/Off inputs have usable width.
+- Approaches: Totals now display CAT III, CAT I, VOR, Visual, Go Arounds, RNAV, LOC, NDB, CIRC in the same order as the Add Flight menu. Stored approach values are unchanged.
+
 ## v13.4
 
 - Removed unrequested duty-layout visual decisions: no inserted Location label and no hiding of the existing Duty controls.
