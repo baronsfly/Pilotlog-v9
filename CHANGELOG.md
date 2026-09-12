@@ -1,3 +1,12 @@
+## v13.0
+
+- Added swipe-right return from an individual Expiry record to the Expiry list; an in-progress autosaved edit is flushed before returning.
+
+## v12.9
+
+- Corrected the Add Flight approach menu to the exact requested order, ending at CIRC.
+- Corrected Roster deduplication so a locked Logbook sector remains green in the calendar badge, including when a roster-labelled duplicate supplies its display text.
+
 ## v12.8
 
 - Rebased exclusively on v12.5; no v12.6 or v12.7 changes were carried forward.
