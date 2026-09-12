@@ -1,10 +1,13 @@
-PilotLog 12.4 — Payroll Regime MAC / IBC
+PilotLog v13.6
 
-- Version number advanced to 12.4.
-- All runtime asset names advanced to 12.4.
-- Service Worker/cache advanced to 12.4.
-- Visible app version badge advanced to v12.4.
-- Settings: Payroll Regime selector IBC / MAC.
-- IBC payroll module remains unchanged.
-- MAC opens the Morocco tax calculation.
-- No automatic fallback between regimes.
+Modifiche:
+- Roster: seleziona una data e premi + OFF. Nessun duty esistente viene sostituito.
+- Lock / Unlock disponibile per tutti i duty; input protetti finche non sblocchi.
+- Approach: CAT III, CAT I, LOC, RNAV, VOR, NDB, CIRC, Go Around, senza righe duplicate. I valori LogTen rimangono conservati.
+- Riposo: 36 ore consecutive con due notti locali complete 22:00-06:00. Il limite di 168 ore riparte dalla fine del riposo riconosciuto, non dopo ogni servizio. Il riquadro mostra il riferimento temporale usato.
+- Dati insufficienti: Not verifiable, senza inventare orari o localita.
+
+Sostituire i file dell'app con quelli di questo archivio. Non cancellare i dati del browser o il database. La versione visibile deve essere 13.6.
+
+Verifiche: 40 test automatici superati (21 logica, 19 Core con interfaccia simulata). Sintassi JavaScript verificata.
+Limiti: non e stata eseguita una prova grafica su browser/iPhone, ne una prova reale IndexedDB/cloud. Il controllo riposo implementa la regola richiesta, non una certificazione di conformita normativa.

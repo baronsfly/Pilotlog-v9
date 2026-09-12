@@ -1,3 +1,12 @@
+## v13.6
+
+- Roster: select a calendar date, then use + OFF. An existing OFF opens instead of creating a duplicate; other duties are never replaced.
+- Lock / Unlock is available for every duty type from Roster. Locked inputs and duty deletion are protected. Locking an existing entry preserves its source values.
+- Approaches: a single display list, CAT III, CAT I, LOC, RNAV, VOR, NDB, CIRC, Go Around. Imported labels map to this display only; original values and hidden approach categories remain stored unchanged. Zero quantities are not converted to one.
+- Weekly rest: read-only, user-configured 36 elapsed hours plus two complete local nights 22:00–06:00. The 168-hour clock restarts at the end of a recognized qualifying rest, never at each ordinary End of Duty. Current rest needs OFF coverage or a subsequent recorded duty; empty calendar time alone does not reset the counter.
+- Unknown duty times/location or absent baseline yield Not verifiable. No substitute scheduled times or UTC location are introduced by this check. Existing payroll, import, trip, and expiry logic is unchanged.
+- Verification: 21 logic tests and 19 Core/mock-UI tests passed; syntax and package checks passed. Browser/iPhone visual QA and real IndexedDB/cloud round-trip were not available in this environment.
+
 ## v13.5
 
 - Add: Total Duty remains visible, manual Duty values survive autosave and reopening, and Duty On/Off inputs have usable width.
