@@ -1,3 +1,20 @@
+## v13.4
+
+- Removed unrequested duty-layout visual decisions: no inserted Location label and no hiding of the existing Duty controls.
+
+## v13.3
+
+- Clean release package: only the application files are included.
+
+## v13.2
+
+- Restored the Add Flight Remarks field to the form’s normal multiline height; it is no longer constrained to 34 px.
+
+## v13.1
+
+- Locked entries now have a green Logbook card and LOCKED badge; the same lock state remains green in the Roster calendar badge.
+- The Add Flight approach selector remains exactly: CAT III, CAT I, VOR, Visual, Go Arounds, RNAV, LOC, NDB, CIRC.
+
 ## v13.0
 
 - Added swipe-right return from an individual Expiry record to the Expiry list; an in-progress autosaved edit is flushed before returning.
