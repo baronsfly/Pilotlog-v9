@@ -1,3 +1,10 @@
+## v12.7
+- Restored Payroll Settings fields from v12.5; Fix Salary grouping is only in Payroll results.
+- Removed Data Source from Payroll results and removed visible seniority percentage row.
+- Hidden Autoland from visible Totals while preserving imported source data.
+- Hidden Back to Expiry button; Expiry editor remains autosave.
+- Reworked STBY/DHD/DHP/Ground/SIM header: centered duty type, date/base left, Duty On/Off right with aligned rows.
+
 ## v12.5
 
 - Packaging fix: deployment ZIP now contains app files at ZIP root, not inside an extra PilotLog_v12.x folder.
