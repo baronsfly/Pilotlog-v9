@@ -1,9 +1,11 @@
-## v12.7
-- Restored Payroll Settings fields from v12.5; Fix Salary grouping is only in Payroll results.
-- Removed Data Source from Payroll results and removed visible seniority percentage row.
-- Hidden Autoland from visible Totals while preserving imported source data.
-- Hidden Back to Expiry button; Expiry editor remains autosave.
-- Reworked STBY/DHD/DHP/Ground/SIM header: centered duty type, date/base left, Duty On/Off right with aligned rows.
+## v12.8
+
+- Rebased exclusively on v12.5; no v12.6 or v12.7 changes were carried forward.
+- Roster: locked Logbook flight badges remain green; duty activity header is aligned with centred Type of Duty, date/location on the left and Duty On/Duty Off on the right. Roster return uses swipe and does not display the Core ID.
+- Add Flight: approach selector order is CAT III, CAT I, VOR, Visual, Go Arounds, RNAV, LOC, NDB, CIRC.
+- Totals: A319 and A320 appear together as A320 Family; the Total Recorded Approaches row is removed. Imported LogTen source values, including Autoland and IFR, are not recalculated or surfaced by this change.
+- Payroll: Data Source and percentage display removed; Base through Deduction are presented as Fix Salary. Settings are unchanged.
+- Expiry: overview actions removed; records open directly, with Lock/Delete inside the individual record. Inputs autosave without a Save or Back button.
 
 ## v12.5
 
@@ -950,12 +952,3 @@
 - Added editable MAC family-deduction count.
 - Payroll automatically renders the selected regime and stores the regime when the month is recalculated.
 - No fallback between MAC and IBC.
-
-## v12.6
-- Totals: A319 and A320 combined into one A320 Family row.
-- Totals: removed Total recorded approaches summary row.
-- LogTen: copy-only time fields no longer backfilled by Auto Sync; locked state no longer blocks LogTen source re-import repair.
-- Roster duty editor: for DHD, DHP, Ground Course, STBY and Simulator, Type of Duty spans the full row and Duty On/Off share the right column.
-- Entry UI: Core activity ID hidden.
-- Payroll settings: legacy Base-to-Deduction inputs regrouped as Fix Salary; seniority percentage inputs removed from the UI.
-- Expiry: list action buttons removed; open the licence/certificate itself, autosave changes, with Lock/Delete inside the selected item.
