@@ -1,3 +1,10 @@
+## v13.7
+
+- Manual duty remains open across successive flights until DUTY OFF is explicitly confirmed. The proposed end is the last Actual IN + 30 minutes and remains editable; Total Duty is counted once.
+- Full crew carry for subsequent flights in the same duty, Return Flight and roster sectors, preserving existing and protected crew values.
+- The supplied Add Flight layout is preserved. The visible version, JavaScript, stylesheet references and offline cache are updated to 13.7.
+- Verification: automated duty/crew scenarios with simulated form controls, JavaScript syntax and package consistency checks. No installation or test on the user's iPhone.
+
 ## v13.6
 
 - Roster: select a calendar date, then use + OFF. An existing OFF opens instead of creating a duplicate; other duties are never replaced.

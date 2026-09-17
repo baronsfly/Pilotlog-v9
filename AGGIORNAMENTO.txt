@@ -1,13 +1,14 @@
-PilotLog v13.6
+PilotLog v13.7
 
 Modifiche:
-- Roster: seleziona una data e premi + OFF. Nessun duty esistente viene sostituito.
-- Lock / Unlock disponibile per tutti i duty; input protetti finche non sblocchi.
-- Approach: CAT III, CAT I, LOC, RNAV, VOR, NDB, CIRC, Go Around, senza righe duplicate. I valori LogTen rimangono conservati.
-- Riposo: 36 ore consecutive con due notti locali complete 22:00-06:00. Il limite di 168 ore riparte dalla fine del riposo riconosciuto, non dopo ogni servizio. Il riquadro mostra il riferimento temporale usato.
-- Dati insufficienti: Not verifiable, senza inventare orari o localita.
+- Duty manuale aperto tra voli successivi, chiuso soltanto con DUTY OFF.
+- Fine duty proposta: ultimo Actual IN + 30 minuti, modificabile.
+- Total Duty conteggiato una sola volta come End of Duty meno On Duty.
+- Crew completo ricopiato nei voli successivi dello stesso duty e Return Flight.
+- Correzioni manuali del layout Add Flight conservate.
+- Versione visibile, nomi dei file e cache offline aggiornati a 13.7.
 
-Sostituire i file dell'app con quelli di questo archivio. Non cancellare i dati del browser o il database. La versione visibile deve essere 13.6.
+Sostituire i file della web app con quelli di questo archivio. Non cancellare i dati del browser o il database. La versione visibile deve essere 13.7.
 
-Verifiche: 40 test automatici superati (21 logica, 19 Core con interfaccia simulata). Sintassi JavaScript verificata.
-Limiti: non e stata eseguita una prova grafica su browser/iPhone, ne una prova reale IndexedDB/cloud. Il controllo riposo implementa la regola richiesta, non una certificazione di conformita normativa.
+Verifiche: test automatici duty/crew con controlli del form simulati, sintassi JavaScript e integrità del pacchetto.
+Il pacchetto contiene solo la web app. Non è stato installato o provato sull'iPhone dell'utente.
