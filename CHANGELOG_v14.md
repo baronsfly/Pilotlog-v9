@@ -1,4 +1,8 @@
-# PilotLog v14 — modifiche rispetto alla v13.11
+# PilotLog v14.1 — modifiche rispetto alla v13.11
+
+## v14.1
+- Il roster si apre subito anche quando il database aeroporti online è lento o irraggiungibile. La verifica del riposo settimanale usa subito i dati aeroporti disponibili localmente; il caricamento completo continua in background.
+- Versione visualizzata e cache offline aggiornate a 14.1.
 
 - Import completo dei tre file LogTen `.sql`, `.sql-wal`, `.sql-shm`, con verifica WAL e conservazione degli originali nell'archivio locale.
 - Riconciliazione per UID e dati operativi: recupero dei record mancanti, merge con AeroLINE/manuali senza duplicare voli o simulatori, consolidamento degli UID già duplicati.

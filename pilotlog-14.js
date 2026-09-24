@@ -13,7 +13,7 @@
 */
 (() => {
 'use strict';
-const VERSION='14';
+const VERSION='14.1';
 const TRIPS_KEY='pilotlog7_trips_v1', PAY_SETTINGS_KEY='pilotlog7_pay_settings_v1', PAY_MONTH_KEY='pilotlog7_pay_month_v1', FX_KEY='pilotlog7_fx_v1', APP_SETTINGS_KEY='pilotlog7_app_settings_v1', LAST_EMAIL_KEY='pilotlog7_last_email_v1', ENTRY_DRAFT_KEY='pilotlog7_entry_draft_v1', ENTRY_DRAFTS_KEY='pilotlog8_entry_drafts_v1', CLOUD_TOMBSTONES_KEY='pilotlog7_local_delete_queue_v1', SYNC_LEDGER_KEY='pilotlog8_sync_ledger_v1', EXPIRY_KEY='pilotlog7_expiry_v1', RECONCILIATION_REVIEW_KEY='pilotlog9_reconciliation_review_v1', LOGTEN_ARCHIVE_META_KEY='pilotlog7_logten_archive_meta_v1', AEROLINE_CONFIG_KEY='pilotlog7_aeroline_config_v1', SYNC_DEVICE_KEY='pilotlog7_device_v1';
 const SYNC_PROTOCOL='db8', SYNC_READY_KEY='pilotlog7_database_initialized', CLOUD_DIRTY_KEY='pilotlog7_cloud_dirty_v1', CLOUD_BASE_REV_KEY='pilotlog7_cloud_base_revision_v1', CLOUD_PENDING_IMPORT_KEY='pilotlog7_cloud_pending_import_v1';
 const $=id=>document.getElementById(id);
@@ -5362,7 +5362,9 @@ function weeklyDutyWindows(rows,asOf,zones){
 }
 async function weeklyRestRosterHtml(rows,selectedDate){
   const now=Date.now(),todayUtc=new Date(now).toISOString().slice(0,10),asOf=selectedDate&&selectedDate!==todayUtc?Date.parse(selectedDate+'T23:59:59Z'):now;
-  await ensureAirportDb(false);
+  // Roster navigation must not wait for the optional online airport database.
+  // Use the built-in/cached index now; ensureAirportDb is already refreshed in the background.
+  if(!airportDbLoaded)ensureAirportDb(false).catch(()=>{});
   const zones=new Map(Object.entries(airportIndex||{}).filter(([,a])=>a?.tz).map(([code,a])=>[code,a.tz]));
   const windows=weeklyDutyWindows(rows,asOf,zones),next=windows.filter(w=>w.start>asOf).sort((a,b)=>a.start-b.start)[0],previous=windows.filter(w=>w.start<=asOf).sort((a,b)=>b.end-a.end)[0];
   let ongoingRestConfirmed=!!(next&&!next.unknown);
