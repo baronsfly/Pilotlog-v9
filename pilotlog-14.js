@@ -1466,7 +1466,7 @@ async function renderFtl(containerId,compact=false){
 
 /* Roster local display and grouping */
 function parseUtcForRoster(date,time){return zuluDate(date,time)}
-async function localTime(date,time,code){if(!time)return'';const a=await airport(code),d=parseUtcForRoster(date,time);if(!d)return time;try{return new Intl.DateTimeFormat('en-GB',{timeZone:a?.tz||'UTC',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).format(d)}catch{return time}}
+function localTime(date,time,code){if(!time)return'';const a=airportIndex[upper(code)],d=parseUtcForRoster(date,time);if(!d)return time;try{return new Intl.DateTimeFormat('en-GB',{timeZone:a?.tz||'UTC',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).format(d)}catch{return time}}
 function rosterFlightDigits(v){
   const s=cleanPrefix(v);
   let m=s.match(/^3O(\d+)$/i);if(m)return m[1];
