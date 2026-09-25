@@ -5323,7 +5323,7 @@ function weeklyRestQualification(start,end,zone){
 function weeklyRestProjection(windows,asOf,ongoingRestConfirmed=false){
   const sorted=windows.filter(w=>w.start<=asOf).map(w=>({...w,end:Math.min(w.end,asOf)})).sort((a,b)=>a.start-b.start||a.end-b.end),merged=[];
   for(const w of sorted){
-    const last=merged.at(-1);
+    const last=merged.length?merged[merged.length-1]:null;
     if(last&&w.start<=last.end){
       last.unknown=last.unknown||w.unknown;
       if(w.end>last.end){last.end=w.end;last.zone=w.zone;last.open=w.open}
@@ -5344,7 +5344,7 @@ function weeklyRestProjection(windows,asOf,ongoingRestConfirmed=false){
     if(i)checkGap(merged[i-1],merged[i].start);
     if(merged[i].unknown){reset=null;lastRest=null;uncertain=true}
   }
-  const last=merged.at(-1);if(last&&ongoingRestConfirmed)checkGap(last,asOf);
+  const last=merged.length?merged[merged.length-1]:null;if(last&&ongoingRestConfirmed)checkGap(last,asOf);
   const deadline=reset===null?null:reset+168*WEEKLY_REST_HOUR;
   return {status:uncertain||deadline===null?'unknown':asOf>deadline?'overdue':'ok',reset,deadline,lastRest,violations,remaining:deadline===null?null:deadline-asOf,asOf};
 }
@@ -5367,7 +5367,7 @@ function weeklyDutyWindows(rows,asOf,zones){
     let locationRow=row;
     if(control&&!overridden){
       const members=(control.memberIds||[]).map(id=>byId.get(id)).filter(Boolean).sort((a,b)=>entryChrono(a).localeCompare(entryChrono(b)));
-      if(members.length)locationRow=members.at(-1);
+      if(members.length)locationRow=members[members.length-1];
     }
     const station=isFlight(locationRow)||isPositioning(locationRow)?locationRow.arr:locationRow.location||locationRow.dep;
     const zone=zones.get(upper(station||''))||null;

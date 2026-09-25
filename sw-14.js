@@ -1,4 +1,4 @@
-const CACHE='pilotlog-14.2-safety-fix-1';
+const CACHE='pilotlog-14.2-safety-fix-2';
 const ASSETS=['./','./index.html','./pilotlog-14.js','./pilotlog-14.css','./manifest.webmanifest','./nexa-icon-192.png','./nexa-icon-512.png','./nexa-apple-touch-icon-180.png'];
 self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS.map(url=>new Request(url,{cache:'reload'})))).then(()=>self.skipWaiting())));
 self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));
