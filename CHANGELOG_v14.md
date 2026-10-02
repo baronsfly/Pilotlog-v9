@@ -1,4 +1,14 @@
-# PilotLog v14.2 — modifiche rispetto alla v13.11
+# PilotLog v14.3 — modifiche rispetto alla v13.11
+
+## v14.3
+- DUTY ON e DUTY OFF operano sul turno del volo selezionato; un vecchio turno aperto non blocca automaticamente altri turni.
+- Associazione di un nuovo volo a un turno aperto dopo conferma della data e dell'ora; nessun aggancio silenzioso a turni storici.
+- Chiusura con Actual IN +30 minuti, orario modificabile, stato e totale condivisi; totale conteggiato una sola volta.
+- Bozze completamente vuote separabili dal turno alla chiusura, dopo conferma, senza cancellarle.
+- Modifica della chiusura e lettura dello stato dal record Core autorevole, anche dopo il ricaricamento.
+- Layout, disposizione e aspetto dei tasti invariati. Aggiornati soltanto numero di versione e identificatore cache.
+- Verificati 17 scenari della logica duty e il flusso dei pulsanti con persistenza IndexedDB in WebKit. Il calendario della 14.2 e della 14.3 si apre nel test con profilo pulito; il problema Safari segnalato non è stato riprodotto. Nessuna modifica alla logica del calendario.
+- Nessuna ricostruzione automatica dei turni storici o dei dati dell'utente.
 
 ## v14.2
 - Ripristinati i riferimenti di stato del calendario roster mancanti: anno/mese, giorno selezionato e blocco dei tocchi durante lo swipe.

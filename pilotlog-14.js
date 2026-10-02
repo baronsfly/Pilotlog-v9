@@ -13,7 +13,7 @@
 */
 (() => {
 'use strict';
-const VERSION='14.2';
+const VERSION='14.3';
 const TRIPS_KEY='pilotlog7_trips_v1', PAY_SETTINGS_KEY='pilotlog7_pay_settings_v1', PAY_MONTH_KEY='pilotlog7_pay_month_v1', FX_KEY='pilotlog7_fx_v1', APP_SETTINGS_KEY='pilotlog7_app_settings_v1', LAST_EMAIL_KEY='pilotlog7_last_email_v1', ENTRY_DRAFT_KEY='pilotlog7_entry_draft_v1', ENTRY_DRAFTS_KEY='pilotlog8_entry_drafts_v1', CLOUD_TOMBSTONES_KEY='pilotlog7_local_delete_queue_v1', SYNC_LEDGER_KEY='pilotlog8_sync_ledger_v1', EXPIRY_KEY='pilotlog7_expiry_v1', RECONCILIATION_REVIEW_KEY='pilotlog9_reconciliation_review_v1', LOGTEN_ARCHIVE_META_KEY='pilotlog7_logten_archive_meta_v1', AEROLINE_CONFIG_KEY='pilotlog7_aeroline_config_v1', SYNC_DEVICE_KEY='pilotlog7_device_v1';
 const SYNC_PROTOCOL='db8', SYNC_READY_KEY='pilotlog7_database_initialized', CLOUD_DIRTY_KEY='pilotlog7_cloud_dirty_v1', CLOUD_BASE_REV_KEY='pilotlog7_cloud_base_revision_v1', CLOUD_PENDING_IMPORT_KEY='pilotlog7_cloud_pending_import_v1';
 const $=id=>document.getElementById(id);
@@ -1312,43 +1312,75 @@ function dutySequenceFor(reference,rows=coreActivityRows()){
   return reference.dutyControl?flights.filter(f=>reference.dutyControl.memberIds.includes(f.id)||connected.some(x=>x.id===f.id)&&(!f.dutyRootId||f.dutyRootId===reference.id)):connected;
 }
 function openDutyReference(){
-  const rows=coreActivityRows(),current=rows.find(f=>f.id===$('editId').value);
-  const linked=rows.find(f=>f.dutyControl?.state==='OPEN'&&(f.dutyControl.memberIds?.includes(current?.id)||f.aerolineBlockId&&f.aerolineBlockId===current?.aerolineBlockId));
-  return linked||rows.filter(f=>f.dutyControl?.state==='OPEN').sort((a,b)=>String(b.dutyControl.start).localeCompare(String(a.dutyControl.start)))[0]||null;
+  const current=coreActivityRows().find(f=>f.id===$('editId').value),duty=controlledDuty(current);
+  return duty?.control.state==='OPEN'?duty.root:null;
+}
+function dutyLabel(root){return `${root.dutyControl.start.slice(0,10)} ${hhmm(new Date(root.dutyControl.start))} Z`}
+function dutyContinuation(entry){
+  if(!isFlight(entry)||controlledDuty(entry))return null;
+  const candidates=coreActivityRows().filter(f=>f.dutyControl?.state==='OPEN').filter(f=>{
+    const day=Date.parse(entry.date+'T00:00:00Z'),start=Date.parse(f.dutyControl.start),startDay=Date.parse(f.dutyControl.start.slice(0,10)+'T00:00:00Z');
+    const departure=zuluDate(entry.date,entry.out||entry.schedOut||'');
+    return Number.isFinite(day)&&day>=startDay&&day<=startDay+86400000&&(!departure||departure.getTime()>=start);
+  });
+  if(candidates.length!==1)return null;
+  const root=candidates[0];
+  return confirm(`Continue the duty started on ${dutyLabel(root)} with this flight?\nCancel keeps this flight separate.`)?root:null;
+}
+function joinControlledDuty(entry,root){
+  const members=dutySequenceFor(root).filter(f=>f.id!==entry.id);members.push(entry);
+  storeDutyControl(root,members,root.dutyControl,'duty-member');
 }
 async function dutyOn(){
   if(canonicalDutyType($('dutyTypeFlight')?.value||'Flight')!=='Flight'){$('onDuty')?.focus();return}
   saveEntryDraft();
-  const current=coreActivityRows().find(f=>f.id===$('editId').value);if(!isFlight(current))return;
-  if(controlledDuty(current)?.control.state==='CLOSED'){alert('This flight already belongs to a closed duty. Add a new flight to start the next duty.');return}
-  if(openDutyReference()){alert('A duty is already open. Use DUTY OFF to close it.');return}
-  const members=dutySequenceFor(current),first=members[0];if(!first)return;
-  const departure=zuluDate(first.date,first.schedOut||'');
-  const sourceReport=first.onDuty&&(isManualFlight(first)||['aeroline','logten','source','imported','manual'].includes(entryFieldSource(first,'onDuty'))||first.source==='aeroline');
-  let start=sourceReport?zuluDate(first.date,first.onDuty):departure?new Date(departure.getTime()-3600000):null;
-  if(sourceReport&&departure&&start>departure)start.setUTCDate(start.getUTCDate()-1);
+  const current=coreActivityRows().find(f=>f.id===$('editId').value);if(!isFlight(current)||current.locked)return;
+  const existing=controlledDuty(current);
+  if(existing?.control.state==='OPEN'){loadEntryToForm(current);return}
+  if(existing?.control.state==='CLOSED'){alert('This flight belongs to a closed duty. DUTY OFF edits its closing time; use a new flight for a new duty.');return}
+  const continuation=dutyContinuation(current);
+  if(continuation){joinControlledDuty(current,continuation);await persistCoreActivities();loadEntryToForm(coreActivityRows().find(f=>f.id===current.id));scheduleAutoSync('duty-on');return}
+  // Opening a duty must not claim unrelated historical flights by time proximity.
+  const members=[current],first=current;
+  const departure=zuluDate(first.date,first.schedOut||first.out||'');
+  let start=first.onDuty?zuluDate(first.date,first.onDuty):departure?new Date(departure.getTime()-3600000):null;
+  if(start&&departure&&start>departure)start.setUTCDate(start.getUTCDate()-1);
   if(!start||!Number.isFinite(start.getTime())){alert('Enter Reporting or Scheduled Departure of the first flight to start the duty.');return}
+  if((first.offDuty||entryTimeOverride(first,'totalDuty'))&&!confirm('Start a new controlled duty for this flight? Its existing duty end and total will be replaced when you close it.'))return;
   const control={state:'OPEN',start:start.toISOString(),memberIds:members.map(f=>f.id),end:''};
   storeDutyControl(first,members,control,'duty-on');
   await persistCoreActivities();loadEntryToForm(coreActivityRows().find(f=>f.id===current.id));scheduleAutoSync('duty-on');
 }
+function emptyDutyDraft(f){return f.activityStatus==='DRAFT'&&!f.out&&!f.off&&!f.on&&!f.in&&!f.schedOut&&!f.schedIn&&!f.flightNo&&!f.dep&&!f.arr}
+function detachedDutyFields(entry){
+  const row={...entry,fieldSources:{...entry.fieldSources},coreInput:entry.coreInput?{...entry.coreInput}:undefined};
+  row.dutyRootId=null;row.dutyControl=null;
+  for(const key of ['onDuty','offDuty','totalDuty'])if(row.fieldSources[key]==='duty-control'){
+    row[key]=key==='totalDuty'?null:'';delete row.fieldSources[key];
+    if(row.coreInput)row.coreInput[key==='totalDuty'?'totalDutyDisplay':key]='';
+  }
+  return row;
+}
 async function dutyOff(){
   if(canonicalDutyType($('dutyTypeFlight')?.value||'Flight')!=='Flight'){$('offDuty')?.focus();return}
   saveEntryDraft();
-  const current=coreActivityRows().find(f=>f.id===$('editId').value);
-  const first=controlledDuty(current)?.root||openDutyReference();
-  if(!first){alert('No open duty. Press DUTY ON first.');return}
-  const members=dutySequenceFor(first),last=members.at(-1);
-  if(!last?.in||members.some(f=>!f.out&&!f.schedOut&&!f.in)){alert('Inserisci l’Actual Block In dell’ultimo volo per chiudere il duty.');return}
-  const start=new Date(first.dutyControl.start),lastStart=zuluDate(last.date,last.out||last.schedOut||'00:00');
-  const blockIn=dateAtOrAfter(last.date,last.in,lastStart);
+  const current=coreActivityRows().find(f=>f.id===$('editId').value);if(!current||current.locked)return;
+  const first=controlledDuty(current)?.root;
+  if(!first){alert('This flight has no duty. Use DUTY ON on this flight to start or join its duty.');return}
+  const all=dutySequenceFor(first),empty=all.filter(f=>f.id!==first.id&&emptyDutyDraft(f)),members=all.filter(f=>!empty.includes(f)),last=members.at(-1);
+  if(members.some(f=>!f.in)){alert('Enter Actual IN for each flight in this duty before closing it.');return}
+  if(empty.length&&!confirm(`Exclude ${empty.length} empty draft(s) from this duty and close the completed flights? The drafts will be kept.`))return;
+  const start=new Date(first.dutyControl.start),lastStart=last&&zuluDate(last.date,last.out||last.schedOut||'00:00');
+  const blockIn=lastStart&&dateAtOrAfter(last.date,last.in,lastStart);
   if(!blockIn||!Number.isFinite(blockIn.getTime())){alert('Check the date and Actual Block In of the last flight.');return}
-  const proposedEnd=new Date(blockIn.getTime()+30*60000);
-  const answer=prompt('End of Duty (Z) — last Actual IN + 30 min. Edit the proposed time if needed.',hhmm(proposedEnd));
+  const closed=first.dutyControl.state==='CLOSED',proposedEnd=closed?new Date(first.dutyControl.end):new Date(blockIn.getTime()+30*60000);
+  const answer=prompt(`End of Duty (Z) — ${proposedEnd.toISOString().slice(0,10)}. ${closed?'Edit the saved closing time.':'Last Actual IN + 30 min; edit if needed.'}`,hhmm(proposedEnd));
   if(answer===null)return;
   const end=dutyClockOnDate(answer.trim(),proposedEnd),minutes=end?Math.round((end-start)/60000):NaN;
-  if(!Number.isFinite(minutes)||minutes<0){alert('Check the dates and Actual Block In of the last flight.');return}
-  const selected=$('editId').value;
+  if(!Number.isFinite(minutes)||minutes<0||end<blockIn){alert('Duty end must be on or after the last Actual IN. Check flight dates and times.');return}
+  if(minutes>MAX_REASONABLE_DUTY_MIN&&!confirm(`This duty runs from ${first.dutyControl.start} to ${end.toISOString()} (${fmt(minutes)}). Confirm these dates and flights belong to one duty?`))return;
+  const selected=current.id;
+  for(const f of empty){const row=upsertCoreActivity(stamp(detachedDutyFields(f)));markCloudEdited('activities',row,'duty-detach')}
   storeDutyControl(first,members,{...first.dutyControl,state:'CLOSED',end:end.toISOString(),minutes},'duty-off');
   await persistCoreActivities();const selectedEntry=coreActivityRows().find(f=>f.id===selected);if(selectedEntry)loadEntryToForm(selectedEntry);scheduleAutoSync('duty-off');
 }
@@ -1363,7 +1395,7 @@ function controlledDutyFields(entry,root,control){
   const closed=control.state==='CLOSED',timeOverrides={...(entry.timeOverrides||{})},manualFields={...(entry.manualFields||{})};
   for(const key of ['onDuty','offDuty','totalDuty']){delete timeOverrides[key];delete manualFields[key]}
   const onDuty=hhmm(new Date(control.start)),offDuty=closed?hhmm(new Date(control.end)):'',totalDuty=closed?(entry.id===root.id?controlledDutyMinutes(control):0):null;
-  return {...entry,onDuty,offDuty,totalDuty,timeOverrides,manualFields,fieldSources:{...(entry.fieldSources||{}),onDuty:'duty-control',offDuty:closed?'duty-control':'',totalDuty:'duty-control'},dutyRootId:root.id,...(entry.id===root.id?{dutyControl:control}:{}),...(entry.coreInput?{coreInput:{...entry.coreInput,onDuty,offDuty,totalDutyDisplay:closed?fmt(controlledDutyMinutes(control)):''}}:{})};
+  return {...entry,onDuty,offDuty,totalDuty,timeOverrides,manualFields,fieldSources:{...(entry.fieldSources||{}),onDuty:'duty-control',offDuty:closed?'duty-control':'',totalDuty:'duty-control'},dutyRootId:root.id,dutyControl:entry.id===root.id?control:null,...(entry.coreInput?{coreInput:{...entry.coreInput,onDuty,offDuty,totalDutyDisplay:closed?fmt(controlledDutyMinutes(control)):''}}:{})};
 }
 function storeDutyControl(root,members,control,reason){
   control={...control,memberIds:members.map(f=>f.id)};
@@ -1382,7 +1414,9 @@ function syncControlledDutyEdit(){
   if(changed&&(control.state==='OPEN'||Date.parse(control.end)>=Date.parse(control.start))){control.minutes=controlledDutyMinutes(control);storeDutyControl(duty.root,dutySequenceFor(duty.root),control,'duty-edit')}
 }
 function controlledDuty(entry){
-  const root=entry?.dutyControl?entry:entry?.dutyRootId?coreActivityRows().find(f=>f.id===entry.dutyRootId):null;
+  if(!entry)return null;
+  const rows=coreActivityRows(),stored=rows.find(f=>f.id===entry.id)||entry;
+  const root=stored.dutyRootId&&stored.dutyRootId!==stored.id?rows.find(f=>f.id===stored.dutyRootId):stored.dutyControl?stored:rows.find(f=>f.dutyControl?.memberIds?.includes(stored.id));
   return root?.dutyControl?{root,control:root.dutyControl}:null;
 }
 
@@ -5723,7 +5757,7 @@ function saveEntryDraft(){
 }
 function beginCoreActivity(type,crewSource=null){
   const id=makeActivityId();$('editId').value=id;$('dutyTypeFlight').value=type;
-  const open=type==='Flight'?openDutyReference():null;
+  const open=type==='Flight'?dutyContinuation({id,dutyType:type,date:$('date').value||today()}):null;
   const previous=open?(open.dutyControl.memberIds||[open.id]).map(id=>coreActivityRows().find(f=>f.id===id)).filter(f=>f&&isFlight(f)).at(-1):null;
   const crew=type==='Flight'?crewCarryData(crewSource||previous):null;
   const row={id,recordKind:'activity',activityStatus:'DRAFT',source:'manual',dutyType:type,date:$('date').value||today(),...(type==='Flight'?{manualDutyMode:true}:{}),...(crew?{...crew,crewCarryApplied:true}:{})};
