@@ -1,5 +1,5 @@
-import {createPayslipCloud} from './payslip-cloud.mjs?v=15.8';
-import {followingMonth,parseIbcPayslip,compareIbcPayslip} from './payslip-compare.mjs?v=15.8';
+import {createPayslipCloud} from './payslip-cloud.mjs?v=15.10';
+import {followingMonth,parseIbcPayslip,compareIbcPayslip} from './payslip-compare.mjs?v=15.10';
 const $=id=>document.getElementById(id);
 const validMonth=value=>/^\d{4}-(0[1-9]|1[0-2])$/.test(value);
 const bytesLabel=n=>n<1e6?`${(n/1000).toFixed(1)} KB`:`${(n/1e6).toFixed(2)} MB`;
