@@ -1,4 +1,5 @@
-import {createPayslipCloud} from './payslip-cloud.mjs?v=15.6';
+import {createPayslipCloud} from './payslip-cloud.mjs?v=15.7';
+import {followingMonth,parseIbcPayslip,compareIbcPayslip} from './payslip-compare.mjs?v=15.7';
 const $=id=>document.getElementById(id);
 const validMonth=value=>/^\d{4}-(0[1-9]|1[0-2])$/.test(value);
 const bytesLabel=n=>n<1e6?`${(n/1000).toFixed(1)} KB`:`${(n/1e6).toFixed(2)} MB`;
@@ -7,14 +8,14 @@ let pdfLibrary;
 export async function loadPdf(){
   if(!pdfLibrary){
     pdfLibrary=(async()=>{
-      const pdf=await import('./vendor/pdfjs/pdf.min.mjs');
-      pdf.GlobalWorkerOptions.workerSrc=new URL('./vendor/pdfjs/pdf.worker.min.mjs',base).href;
-      if(globalThis.window?.PilotLogNative?.isNative)globalThis.pdfjsWorker=await import('./vendor/pdfjs/pdf.worker.min.mjs');
+      const pdf=await import('./vendor/pdfjs/pdf.min.js');
+      pdf.GlobalWorkerOptions.workerSrc=new URL('./vendor/pdfjs/pdf.worker.min.js',base).href;
+      if(globalThis.window?.PilotLogNative?.isNative)globalThis.pdfjsWorker=await import('./vendor/pdfjs/pdf.worker.min.js');
       return pdf;
     })().catch(error=>{
       pdfLibrary=undefined;
       console.warn('PDF reader dependencies could not load',error);
-      throw Error('The PDF reader could not load. You can still save or export the original.');
+      throw Error(`The PDF reader could not load (${error.message}). You can still save or export the original.`);
     });
   }
   return pdfLibrary;
@@ -130,6 +131,12 @@ export function initializePayslips({extract=extractDocument,compact=compactImage
   let draft=null,busy=false,viewerPdf=null,viewerPage=1,viewerBlob=null,viewerName='',previewUrl='',previewRevision=0,opener=null;
   const status=text=>{$('payslipStatus').textContent=text};
   const setBusy=value=>{busy=value;for(const id of ['payslipFile','payslipCamera','payslipSave','payslipCancel','payslipKeepOriginal'])$(id).disabled=value};
+  const monthLabel=month=>new Intl.DateTimeFormat('it-IT',{month:'long',year:'numeric'}).format(new Date(month+'-01T12:00:00'));
+  function updateComparisonHint(){
+    const worked=$('payrollMonth').value||new Date().toISOString().slice(0,7),paid=followingMonth(worked);
+    $('payslipCompareHint').textContent=`Per controllare ${monthLabel(worked)}, carica il cedolino di ${monthLabel(paid)}. Il file rimane archiviato nel mese indicato sul cedolino.`;
+    $('payslipComparison').replaceChildren();
+  }
   function clearDraft(){draft=null;$('payslipReview').classList.add('hidden');$('payslipText').value='';$('payslipFile').value='';$('payslipCamera').value=''}
   function button(label,fn){const b=document.createElement('button');b.type='button';b.className='secondary';b.textContent=label;b.addEventListener('click',()=>Promise.resolve().then(fn).catch(e=>status(e.message)));return b}
   async function render(){
@@ -176,6 +183,60 @@ export function initializePayslips({extract=extractDocument,compact=compactImage
         }}));
       item.append(name,size,actions);container.append(item);
     }
+  }
+  async function renderComparison(){
+    const worked=$('payrollMonth').value||new Date().toISOString().slice(0,7),paid=followingMonth(worked),view=$('payslipComparison');
+    view.textContent=`Controllo del cedolino di ${monthLabel(paid)}…`;
+    const revision=archiveRevision;
+    try{
+      const model=window.PilotLogPayrollCompare?.forMonth(worked);
+      if(!model)throw Error('Calcolo Payroll non disponibile.');
+      if(model.regime!=='IBC')throw Error('Questa prima bozza confronta i cedolini IBC; il formato MAC richiede una lettura distinta.');
+      const ctx=await cloud.context(),locals=(await store.list()).filter(row=>row.month===paid&&(!owners()[row.id]||owners()[row.id]===ctx?.id));
+      let rows=[...locals];if(ctx){
+        const remote=await cloud.list(ctx,paid),byId=new Map(rows.map(row=>[row.id,row]));
+        remote.forEach(row=>byId.set(row.id,{...byId.get(row.id),...row}));rows=[...byId.values()];
+      }
+      if(!rows.length)throw Error(`Carica il cedolino di ${monthLabel(paid)} per confrontare il lavoro di ${monthLabel(worked)}.`);
+      const row=rows.sort((a,b)=>String(b.createdAt).localeCompare(String(a.createdAt)))[0];
+      let read=row.text||'';
+      if(!read.trim()){
+        const blob=row.cloud&&ctx?await cloud.read(ctx,row):recordBlob(await store.read(row.id));
+        read=(await extract(blob,()=>{})).text||'';
+      }
+      if(revision!==archiveRevision||$('payrollMonth').value!==worked||ctx?.id!==(await cloud.context())?.id)return;
+      const parsed=parseIbcPayslip(read);
+      if(!parsed||parsed.month!==paid)throw Error('Il testo del cedolino non è leggibile o il mese non coincide. Il PDF resta salvato.');
+      if(!parsed.complete)throw Error('Le voci lette non quadrano con il totale del cedolino: confronto sospeso, PDF conservato.');
+      const result=compareIbcPayslip(parsed,model.projection);
+      view.replaceChildren();
+      const heading=document.createElement('h4');heading.textContent=`${row.name} · lavoro ${monthLabel(worked)}`;view.append(heading);
+      const table=document.createElement('div');table.className='payslip-comparison-table';
+      const money=n=>Number.isFinite(n)?`${n.toLocaleString('it-IT',{minimumFractionDigits:2,maximumFractionDigits:2})} DHM`:'Da verificare';
+      const add=(label,expected,actual,diff,detail='')=>{
+        const line=document.createElement('div');line.className='payslip-comparison-row';
+        const name=document.createElement('strong');name.textContent=label+(detail?` · ${detail}`:'');
+        const values=document.createElement('span');values.textContent=`Atteso ${money(expected)} · pagato ${money(actual)} · ${Number.isFinite(diff)?`differenza ${money(Math.abs(diff))}`:'non confrontabile'}`;
+        const flag=document.createElement('b');flag.className=Number.isFinite(diff)?diff>0.005?'payslip-due':'payslip-ok':'payslip-unknown';flag.textContent=Number.isFinite(diff)?diff>0.005?'DA RICEVERE':diff<-.005?'PAGATO IN PIÙ':'CORRETTO':'DA VERIFICARE';
+        line.append(name,values,flag);table.append(line);
+      };
+      for(const item of result.rows){
+        let detail='';if(item.label==='Credit H'&&result.hours!==null)detail=`${Math.floor(result.hours/60)}:${String(result.hours%60).padStart(2,'0')} pagate`;
+        if(item.label==='Training sectors'&&result.training!==null)detail=`${result.training} settori pagati`;
+        if(item.label==='Simulator allowance'&&result.sims!==null)detail=`${result.sims} attività pagate`;
+        if(item.label==='Layover + Day OFF'){
+          const p=model.projection;
+          const duration=m=>Math.floor(m/60)+':'+String(m%60).padStart(2,'0');
+          detail=`${p.dayOffCount} Day OFF registrati (${money(p.dayOffPay)})`;
+          if(Number.isFinite(result.layoverPaidMinutes)&&Number.isFinite(p.layMins)){
+            const delta=p.layMins-result.layoverPaidMinutes;
+            detail+=` · layover atteso ${duration(p.layMins)}, ricavato ${duration(result.layoverPaidMinutes)} · ${duration(Math.abs(delta))} ${delta>0?'in meno':delta<0?'in più':'di differenza'}`;
+          }
+        }
+        add(item.label,item.expected,item.paid,item.difference,detail);
+      }
+      add('TOTALE',result.expected,result.paid,result.difference);view.append(table);
+    }catch(error){if(revision===archiveRevision)view.textContent=error.message}
   }
   async function exportBlob(blob,name){
     if(window.PilotLogNative?.isNative){await window.PilotLogNative.exportFile(name,blob,blob.type);return}
@@ -259,7 +320,14 @@ export function initializePayslips({extract=extractDocument,compact=compactImage
       const original=$('payslipKeepOriginal').checked,blob=original?draft.original:draft.blob;
       const record={id:draft.id,month,name:original?draft.originalName:draft.name,type:blob.type,size:blob.size,originalSize:draft.original.size,text:draft.text,method:draft.method,pages:draft.pages,createdAt:new Date().toISOString(),data:await base64(blob)};
       const ctx=await cloud.context();if(ctx)assign(record.id,ctx.id);
-      const result=await store.save(record);clearDraft();await render();status(result.duplicate?'Already saved.':'Saved. Online status is shown beside the document.');
+      const result=await store.save(record);clearDraft();
+      const saved=result.record||record;
+      let pending='';
+      if(ctx&&saved.month!==$('payrollMonth').value&&ctx.id===(await cloud.context())?.id){
+        try{const document=await store.read(record.id);await cloud.save(ctx,document,recordBlob(document))}
+        catch(error){pending='Upload pending ('+saved.month+'): '+error.message}
+      }
+      await render();status(pending|| (result.duplicate?'Already saved.':'Saved. Online status is shown beside the document.'));
     }catch(e){status(`Save failed: ${e.message}`)}finally{setBusy(false)}
   });
   $('payslipViewerClose').addEventListener('click',closePreview);
@@ -270,11 +338,12 @@ export function initializePayslips({extract=extractDocument,compact=compactImage
     const controls=[...$('payslipViewer').querySelectorAll('button:not(:disabled),summary')].filter(x=>x.getClientRects().length),first=controls[0],last=controls.at(-1);
     if(event.shiftKey&&document.activeElement===first){event.preventDefault();last.focus()}else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus()}
   }});
-  const refresh=()=>render().catch(e=>status(`Archive unavailable: ${e.message}`));
+  const refresh=()=>{updateComparisonHint();render().catch(e=>status(`Archive unavailable: ${e.message}`))};
   $('payrollMonth').addEventListener('change',refresh);
+  $('payslipCompare').addEventListener('click',renderComparison);
   $('payslipSync')?.addEventListener('click',refresh);
   window.addEventListener('online',refresh);
   window.addEventListener('pilotlog-auth-change',()=>{closePreview();refresh()});
   window.addEventListener('pilotlog-close-payslip',closePreview);
-  render().catch(e=>status(`Archive unavailable: ${e.message}`));
+  refresh();
 }

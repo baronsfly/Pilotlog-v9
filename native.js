@@ -14,10 +14,10 @@
       __defProp(target, name, { get: all[name], enumerable: true });
   };
 
-  // ../PilotLog_15.5_Source/node_modules/@capacitor/core/dist/index.js
+  // node_modules/@capacitor/core/dist/index.js
   var ExceptionCode, CapacitorException, getPlatformId, createCapacitor, initCapacitorGlobal, Capacitor, registerPlugin, WebPlugin, encode, decode, CapacitorCookiesPluginWeb, CapacitorCookies, readBlobAsBase64, normalizeHttpHeaders, buildUrlParams, buildRequestInit, CapacitorHttpPluginWeb, CapacitorHttp, SystemBarsStyle, SystemBarType, SystemBarsPluginWeb, SystemBars;
   var init_dist = __esm({
-    "../PilotLog_15.5_Source/node_modules/@capacitor/core/dist/index.js"() {
+    "node_modules/@capacitor/core/dist/index.js"() {
       (function(ExceptionCode2) {
         ExceptionCode2["Unimplemented"] = "UNIMPLEMENTED";
         ExceptionCode2["Unavailable"] = "UNAVAILABLE";
@@ -525,14 +525,14 @@
     }
   });
 
-  // ../PilotLog_15.5_Source/node_modules/@capacitor/app/dist/esm/web.js
+  // node_modules/@capacitor/app/dist/esm/web.js
   var web_exports = {};
   __export(web_exports, {
     AppWeb: () => AppWeb
   });
   var AppWeb;
   var init_web = __esm({
-    "../PilotLog_15.5_Source/node_modules/@capacitor/app/dist/esm/web.js"() {
+    "node_modules/@capacitor/app/dist/esm/web.js"() {
       init_dist();
       AppWeb = class extends WebPlugin {
         constructor() {
@@ -577,10 +577,10 @@
     }
   });
 
-  // ../PilotLog_15.5_Source/node_modules/@capacitor/filesystem/dist/esm/definitions.js
+  // node_modules/@capacitor/filesystem/dist/esm/definitions.js
   var Directory, Encoding;
   var init_definitions = __esm({
-    "../PilotLog_15.5_Source/node_modules/@capacitor/filesystem/dist/esm/definitions.js"() {
+    "node_modules/@capacitor/filesystem/dist/esm/definitions.js"() {
       (function(Directory2) {
         Directory2["Documents"] = "DOCUMENTS";
         Directory2["Data"] = "DATA";
@@ -600,7 +600,7 @@
     }
   });
 
-  // ../PilotLog_15.5_Source/node_modules/@capacitor/filesystem/dist/esm/web.js
+  // node_modules/@capacitor/filesystem/dist/esm/web.js
   var web_exports2 = {};
   __export(web_exports2, {
     FilesystemWeb: () => FilesystemWeb
@@ -626,7 +626,7 @@
   }
   var FilesystemWeb;
   var init_web2 = __esm({
-    "../PilotLog_15.5_Source/node_modules/@capacitor/filesystem/dist/esm/web.js"() {
+    "node_modules/@capacitor/filesystem/dist/esm/web.js"() {
       init_dist();
       init_definitions();
       FilesystemWeb = class _FilesystemWeb extends WebPlugin {
@@ -1173,14 +1173,14 @@
     }
   });
 
-  // ../PilotLog_15.5_Source/node_modules/@capacitor/share/dist/esm/web.js
+  // node_modules/@capacitor/share/dist/esm/web.js
   var web_exports3 = {};
   __export(web_exports3, {
     ShareWeb: () => ShareWeb
   });
   var ShareWeb;
   var init_web3 = __esm({
-    "../PilotLog_15.5_Source/node_modules/@capacitor/share/dist/esm/web.js"() {
+    "node_modules/@capacitor/share/dist/esm/web.js"() {
       init_dist();
       ShareWeb = class extends WebPlugin {
         async canShare() {
@@ -1205,7 +1205,7 @@
     }
   });
 
-  // ../PilotLog_15.5_Source/node_modules/@capacitor/network/dist/esm/web.js
+  // node_modules/@capacitor/network/dist/esm/web.js
   var web_exports4 = {};
   __export(web_exports4, {
     Network: () => Network,
@@ -1251,7 +1251,7 @@
   }
   var NetworkWeb, Network;
   var init_web4 = __esm({
-    "../PilotLog_15.5_Source/node_modules/@capacitor/network/dist/esm/web.js"() {
+    "node_modules/@capacitor/network/dist/esm/web.js"() {
       init_dist();
       NetworkWeb = class extends WebPlugin {
         constructor() {
@@ -1296,16 +1296,16 @@
   // src/native.js
   init_dist();
 
-  // ../PilotLog_15.5_Source/node_modules/@capacitor/app/dist/esm/index.js
+  // node_modules/@capacitor/app/dist/esm/index.js
   init_dist();
   var App = registerPlugin("App", {
     web: () => Promise.resolve().then(() => (init_web(), web_exports)).then((m) => new m.AppWeb())
   });
 
-  // ../PilotLog_15.5_Source/node_modules/@capacitor/filesystem/dist/esm/index.js
+  // node_modules/@capacitor/filesystem/dist/esm/index.js
   init_dist();
 
-  // ../PilotLog_15.5_Source/node_modules/@capacitor/synapse/dist/synapse.mjs
+  // node_modules/@capacitor/synapse/dist/synapse.mjs
   function s(t) {
     t.CapacitorUtils.Synapse = new Proxy(
       {},
@@ -1352,20 +1352,20 @@
     typeof window > "u" || (window.CapacitorUtils = window.CapacitorUtils || {}, window.Capacitor !== void 0 && !t ? s(window) : window.cordova !== void 0 && u(window));
   }
 
-  // ../PilotLog_15.5_Source/node_modules/@capacitor/filesystem/dist/esm/index.js
+  // node_modules/@capacitor/filesystem/dist/esm/index.js
   init_definitions();
   var Filesystem = registerPlugin("Filesystem", {
     web: () => Promise.resolve().then(() => (init_web2(), web_exports2)).then((m) => new m.FilesystemWeb())
   });
   f();
 
-  // ../PilotLog_15.5_Source/node_modules/@capacitor/share/dist/esm/index.js
+  // node_modules/@capacitor/share/dist/esm/index.js
   init_dist();
   var Share = registerPlugin("Share", {
     web: () => Promise.resolve().then(() => (init_web3(), web_exports3)).then((m) => new m.ShareWeb())
   });
 
-  // ../PilotLog_15.5_Source/node_modules/@capacitor/network/dist/esm/index.js
+  // node_modules/@capacitor/network/dist/esm/index.js
   init_dist();
   var Network2 = registerPlugin("Network", {
     web: () => Promise.resolve().then(() => (init_web4(), web_exports4)).then((m) => new m.NetworkWeb())
