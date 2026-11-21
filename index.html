@@ -12,7 +12,7 @@
 <link rel="apple-touch-icon" sizes="180x180" href="nexa-apple-touch-icon-180.png">
 <link rel="icon" type="image/png" sizes="192x192" href="nexa-icon-192.png">
 <link rel="icon" type="image/png" sizes="512x512" href="nexa-icon-512.png">
-<link rel="stylesheet" href="pilotlog-16.3.css">
+<link rel="stylesheet" href="pilotlog-16.4.css">
 </head>
 <body>
 <header>
@@ -31,7 +31,7 @@
         <p id="appTagline">PilotLog — your personal LogBook</p>
       </div>
     </div>
-    <span class="version-badge">16.3</span>
+    <span class="version-badge">16.4</span>
   </div>
 </header>
 <main>
@@ -97,9 +97,9 @@
         
       </div>
 
-      <div class="entry-crew-rows"><div data-entry-field="picName"><label>PIC</label><input id="picName" placeholder="CAPTAIN NAME" data-upper list="crewNameSuggestions" autocomplete="off"></div><div data-entry-field="sicName"><label>SIC</label><input id="sicName" placeholder="FIRST OFFICER NAME" data-upper list="crewNameSuggestions" autocomplete="off"></div>
+      <div class="entry-crew-rows"><div data-entry-field="picName"><label>PIC</label><input id="picName" placeholder="CAPTAIN NAME" data-upper autocorrect="off" spellcheck="false" autocomplete="off"></div><div data-entry-field="sicName"><label>SIC</label><input id="sicName" placeholder="FIRST OFFICER NAME" data-upper autocorrect="off" spellcheck="false" autocomplete="off"></div>
           
-          <div data-entry-field="instructorName"><label>Instructor</label><input id="instructorName" placeholder="INSTRUCTOR NAME" data-upper list="crewNameSuggestions" autocomplete="off"></div><div data-entry-field="soName"><label>SO Name</label><input id="soName" placeholder="SECOND OFFICER NAME" data-upper list="crewNameSuggestions" autocomplete="off"></div><div data-entry-field="purserName"><label>Purser</label><input id="purserName" placeholder="PURSER NAME" data-upper list="crewNameSuggestions" autocomplete="off"></div><div data-entry-field="attendant1Name"><label>Cabin Crew 1</label><input id="attendant1Name" placeholder="ATTENDANT 1" data-upper list="crewNameSuggestions" autocomplete="off"></div><div data-entry-field="attendant2Name"><label>Cabin Crew 2</label><input id="attendant2Name" placeholder="ATTENDANT 2" data-upper list="crewNameSuggestions" autocomplete="off"></div><div data-entry-field="attendant3Name"><label>Cabin Crew 3</label><input id="attendant3Name" placeholder="ATTENDANT 3" data-upper list="crewNameSuggestions" autocomplete="off"></div></div><div class="entry-fuel-rows"><div data-entry-field="pax"><label>PAX</label><input id="pax" type="number" min="0" step="1"></div><div data-entry-field="fuelAboard"><label>Fuel Aboard</label><input id="fuelAboard" type="number" min="0" step="0.1"></div><div data-entry-field="fuelBurned"><label>Fuel Burned</label><input id="fuelBurned" type="number" min="0" step="0.1"></div><div data-entry-field="fuelMinimum"><label>Minimum Fuel</label><input id="fuelMinimum" type="number" min="0" step="0.1"></div></div><div class="full" id="remarksWrap"><label>Remarks</label><textarea id="remarks"></textarea></div>
+          <div data-entry-field="instructorName"><label>Instructor</label><input id="instructorName" placeholder="INSTRUCTOR NAME" data-upper autocorrect="off" spellcheck="false" autocomplete="off"></div><div data-entry-field="soName"><label>SO Name</label><input id="soName" placeholder="SECOND OFFICER NAME" data-upper autocorrect="off" spellcheck="false" autocomplete="off"></div><div data-entry-field="purserName"><label>Purser</label><input id="purserName" placeholder="PURSER NAME" data-upper autocorrect="off" spellcheck="false" autocomplete="off"></div><div data-entry-field="attendant1Name"><label>Cabin Crew 1</label><input id="attendant1Name" placeholder="ATTENDANT 1" data-upper autocorrect="off" spellcheck="false" autocomplete="off"></div><div data-entry-field="attendant2Name"><label>Cabin Crew 2</label><input id="attendant2Name" placeholder="ATTENDANT 2" data-upper autocorrect="off" spellcheck="false" autocomplete="off"></div><div data-entry-field="attendant3Name"><label>Cabin Crew 3</label><input id="attendant3Name" placeholder="ATTENDANT 3" data-upper autocorrect="off" spellcheck="false" autocomplete="off"></div></div><div class="entry-fuel-rows"><div data-entry-field="pax"><label>PAX</label><input id="pax" type="number" min="0" step="1"></div><div data-entry-field="fuelAboard"><label>Fuel Aboard</label><input id="fuelAboard" type="number" min="0" step="0.1"></div><div data-entry-field="fuelBurned"><label>Fuel Burned</label><input id="fuelBurned" type="number" min="0" step="0.1"></div><div data-entry-field="fuelMinimum"><label>Minimum Fuel</label><input id="fuelMinimum" type="number" min="0" step="0.1"></div></div><div class="full" id="remarksWrap"><label>Remarks</label><textarea id="remarks"></textarea></div>
       <details class="entry-additional"><summary>Additional details</summary><div class="entry-extra-grid"><div><label>Source</label><input id="entrySourceDisplay" readonly value="Manual"></div><div data-entry-field="courseType" class="hidden"><label>Course type</label><input id="courseType" placeholder="GRT MOD 3 / CRM / SEP..." data-upper></div><div data-entry-field="trainerType" class="hidden"><label>Trainer Type</label><select id="trainerTypeInput"><option value="">—</option><option value="GI">GI</option><option value="SOD">SOD / Office</option><option value="TNE">TNE</option></select></div><div data-entry-field="schedBlock"><label>Schedule Block</label><input id="schedBlockDisplay" readonly></div><div data-entry-field="block"><label>Block</label><input id="blockDisplay" type="time" step="60"></div></div></details><div class="totals" id="calcPreview">Schedule Block 0:00 • Actual Block 0:00 • Flight 0:00 • Credit 0:00</div>
       <div class="hint" id="nightStatus">Night time uses airport coordinates, solar ephemerides and the OUT–IN interval.</div>
       <div class="actions"><button class="secondary hidden" type="button" id="entryBackBtn">← Back</button><span class="small" id="coreIdDisplay"></span><button class="danger" type="button" id="entryDeleteBtn">Delete activity</button><button class="primary lock-button" type="button" id="lockEntryBtn">🔒 Lock</button><button class="danger hidden" type="button" id="entryRosterDeleteBtn">Delete duty</button><button class="secondary" type="button" id="returnFlight">Return Flight</button></div>
@@ -271,7 +271,7 @@
           <div data-expiry-field><label>MEDICAL CLASS</label><select id="expiryMedicalClass"><option value="">SELECT</option><option value="CLASS 1">CLASS 1</option><option value="CLASS 2">CLASS 2</option></select></div>
           <div data-expiry-field><label>ENGLISH LEVEL</label><select id="expiryEnglishLevel"><option value="">SELECT</option><option value="4">LEVEL 4</option><option value="5">LEVEL 5</option><option value="6">LEVEL 6</option></select></div>
           <div data-expiry-field><label>AIRCRAFT ENDORSED</label><input id="expiryAircraftType" data-upper list="aircraftTypeSuggestions" placeholder="A320"></div>
-          <div data-expiry-field><label>ENDORSED BY</label><input id="expiryEndorsedBy" data-upper list="crewNameSuggestions" autocomplete="off" placeholder="NAME"></div>
+          <div data-expiry-field><label>ENDORSED BY</label><input id="expiryEndorsedBy" data-upper autocorrect="off" spellcheck="false" autocomplete="off" placeholder="NAME"></div>
           <div data-expiry-field><label>EXPIRY DATE</label><input id="expiryExpiry" type="date" required><div class="small" id="expiryExpiryHint"></div></div>
           <div data-expiry-field><label id="expiryIssuerLabel">ISSUED BY</label><input id="expiryIssuer" data-upper></div>
           <div data-expiry-field class="full expiry-photo-field">
@@ -335,6 +335,15 @@
     <div><label>Aircraft ID Prefix</label><input id="setAircraftPrefix" maxlength="10" placeholder="CN-NM" data-upper></div>
     </div><div class="actions"><button class="primary" type="submit">Save Settings</button><button class="secondary" type="button" id="refreshAirportsBtn">Refresh airport database</button></div>
   <div class="hint" id="airportDbStatus">Airport database: checking…</div></form></div>
+  <details id="crewDirectory" class="card crew-directory"><summary>Crew directory</summary>
+    <form id="crewDirectoryForm" class="crew-directory-controls">
+      <label for="crewDirectoryName">Find or add a name</label>
+      <input id="crewDirectoryName" type="search" autocomplete="off" autocorrect="off" spellcheck="false">
+      <button type="submit" class="secondary">Add name</button>
+    </form>
+    <div id="crewDirectoryList"></div>
+    <button id="crewDirectoryMore" type="button" class="secondary hidden">Show more</button>
+  </details>
   </details>
   <details class="settings-group" name="pilotlog-settings" data-settings-group="time-groups">
     <summary>Time Group Settings</summary>
@@ -553,7 +562,7 @@
   <button data-view="settingsView"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1-2.8 2.8-.1-.1a1.6 1.6 0 0 0-1.8-.3 1.6 1.6 0 0 0-1 1.5V21h-4v-.2a1.6 1.6 0 0 0-1-1.5 1.6 1.6 0 0 0-1.8.3l-.1.1-2.8-2.8.1-.1A1.6 1.6 0 0 0 4.6 15a1.6 1.6 0 0 0-1.5-1H3v-4h.1a1.6 1.6 0 0 0 1.5-1 1.6 1.6 0 0 0-.3-1.8l-.1-.1 2.8-2.8.1.1a1.6 1.6 0 0 0 1.8.3 1.6 1.6 0 0 0 1-1.5V3h4v.2a1.6 1.6 0 0 0 1 1.5 1.6 1.6 0 0 0 1.8-.3l.1-.1 2.8 2.8-.1.1a1.6 1.6 0 0 0-.3 1.8 1.6 1.6 0 0 0 1.5 1h.2v4h-.2a1.6 1.6 0 0 0-1.3 1z"/></svg><span>Settings</span></button>
 </nav>
 <script src="native.js" defer></script>
-<script src="pilotlog-16.3.js" defer></script>
+<script src="pilotlog-16.4.js" defer></script>
 <dialog id="rosterScreenshotDialog" aria-labelledby="rosterScreenshotTitle" style="width:min(94vw,820px);max-height:90vh;overflow:auto;border:1px solid #555;border-radius:16px;padding:20px;background:#fff;color:#111827">
 <h2 id="rosterScreenshotTitle">Completa da screenshot</h2>
 <p>Seleziona Flight Info e Crew. I voli vengono creati o completati nel Roster solo dopo la conferma.</p>
@@ -565,6 +574,6 @@
   <div id="payslipPageControls" class="actions"><button id="payslipPrev" type="button" class="secondary">Previous</button><span id="payslipPage"></span><button id="payslipNext" type="button" class="secondary">Next</button></div>
   <div id="payslipPreviewContent"></div><details><summary>Read text</summary><pre id="payslipViewerText"></pre></details></div>
 </div>
-<script type="module">import {initializePayslips} from './payslips.mjs?v=16.3';initializePayslips();</script>
+<script type="module">import {initializePayslips} from './payslips.mjs?v=16.4';initializePayslips();</script>
 <dialog id="integrityDialog"><h3>Data Integrity Check</h3><div id="integrityIssueList"></div><button type="button" id="integrityClose">Close</button></dialog>
 </body></html>
