@@ -1,5 +1,5 @@
-import {createPayslipCloud} from './payslip-cloud.mjs?v=16.7';
-import {followingMonth,parseIbcPayslip,compareIbcPayslip} from './payslip-compare.mjs?v=16.7';
+import {createPayslipCloud} from './payslip-cloud.mjs?v=16.8';
+import {followingMonth,parseIbcPayslip,compareIbcPayslip} from './payslip-compare.mjs?v=16.8';
 const $=id=>document.getElementById(id);
 const validMonth=value=>/^\d{4}-(0[1-9]|1[0-2])$/.test(value);
 const bytesLabel=n=>n<1e6?`${(n/1000).toFixed(1)} KB`:`${(n/1e6).toFixed(2)} MB`;
@@ -210,7 +210,11 @@ export function initializePayslips({extract=extractDocument,compact=compactImage
       if(!parsed.complete)throw Error('The extracted amounts do not match the payslip total. Comparison paused. The PDF is available in the archive.');
       const result=compareIbcPayslip(parsed,model.projection);
       view.replaceChildren();
-      const heading=document.createElement('h4');heading.textContent=`${row.name} · work in ${monthLabel(worked)}`;view.append(heading);
+      const heading=document.createElement('h4');heading.append(button(row.name,async()=>{
+        if((await cloud.context())?.id!==ctx?.id)throw Error('Account changed. Reopen the month.');
+        const blob=row.cloud&&ctx?await cloud.read(ctx,row):recordBlob(await store.read(row.id));
+        await preview(blob,row.name,row.text);
+      }),` · work in ${monthLabel(worked)}`);view.append(heading);
       const table=document.createElement('div');table.className='payslip-comparison-table';
       const money=n=>Number.isFinite(n)?`${n.toLocaleString('en-GB',{minimumFractionDigits:2,maximumFractionDigits:2})} DHM`:'Check required';
       const add=(label,expected,actual,diff,detail='')=>{
@@ -294,18 +298,25 @@ export function initializePayslips({extract=extractDocument,compact=compactImage
       const original=file.slice(0,file.size,type),id=await fingerprint(original);
       const ownerMap=owners(),current=await cloud.context();
       const duplicate=(await store.list()).find(x=>x.id===id&&(!ownerMap[x.id]||ownerMap[x.id]===current?.id));
-      if(duplicate){status(`Already saved: ${duplicate.month}.`);return}
+      if(duplicate){
+        status(`Already saved: ${duplicate.month}. `);
+        $('payslipStatus').append(button('Open document',async()=>{
+          if((await cloud.context())?.id!==current?.id)throw Error('Account changed. Reopen the month.');
+          await preview(recordBlob(await store.read(duplicate.id)),duplicate.name,duplicate.text);
+        }));
+        return;
+      }
       let result={text:'',method:'',pages:0,month:''},readError='';
       try{result=await extract(original,status)}catch(e){readError=`Text could not be read: ${e.message}. The original can still be saved.`}
       let blob=original;
       if(type!=='application/pdf'){try{blob=await compact(original)}catch{}}
       const name=blob.type!==type?file.name.replace(/\.[^.]+$/,'')+'.jpg':file.name;
       draft={id,original,blob,originalName:file.name,name,...result};
-      $('payslipDocumentMonth').value=result.month||$('payrollMonth').value||new Date().toISOString().slice(0,7);
+      $('payslipDocumentMonth').value=result.month||'';
       $('payslipDocumentMonth').dispatchEvent(new window.Event('change'));
       $('payslipText').value=result.text;$('payslipFileSummary').textContent=`${name} · ${bytesLabel(blob.size)}${blob.size<original.size?` (original ${bytesLabel(original.size)})`:''}`;
       $('payslipKeepOriginal').checked=false;$('payslipOriginalChoice').classList.toggle('hidden',blob===original);
-      $('payslipReview').classList.remove('hidden');status(readError||(result.text.trim()?'Ready to save.':'No text detected. You can save the document.'));
+      $('payslipReview').classList.remove('hidden');status(!result.month?'Select the month and year printed on the document.':readError||(result.text.trim()?'Ready to save.':'No text detected. You can save the document.'));
     }catch(e){status(e.message)}finally{setBusy(false)}
   }
   $('payslipFile').addEventListener('change',e=>acquire(e.target.files[0]));
