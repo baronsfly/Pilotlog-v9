@@ -12,7 +12,7 @@
 <link rel="apple-touch-icon" sizes="180x180" href="nexa-apple-touch-icon-180.png">
 <link rel="icon" type="image/png" sizes="192x192" href="nexa-icon-192.png">
 <link rel="icon" type="image/png" sizes="512x512" href="nexa-icon-512.png">
-<link rel="stylesheet" href="pilotlog-16.9.css">
+<link rel="stylesheet" href="pilotlog-16.11.css">
 </head>
 <body>
 <header>
@@ -31,7 +31,7 @@
         <p id="appTagline">PilotLog — your personal LogBook</p>
       </div>
     </div>
-    <span class="version-badge">16.9</span>
+    <span class="version-badge">16.11</span>
   </div>
 </header>
 <main>
@@ -537,7 +537,7 @@
   <button data-view="settingsView"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1-2.8 2.8-.1-.1a1.6 1.6 0 0 0-1.8-.3 1.6 1.6 0 0 0-1 1.5V21h-4v-.2a1.6 1.6 0 0 0-1-1.5 1.6 1.6 0 0 0-1.8.3l-.1.1-2.8-2.8.1-.1A1.6 1.6 0 0 0 4.6 15a1.6 1.6 0 0 0-1.5-1H3v-4h.1a1.6 1.6 0 0 0 1.5-1 1.6 1.6 0 0 0-.3-1.8l-.1-.1 2.8-2.8.1.1a1.6 1.6 0 0 0 1.8.3 1.6 1.6 0 0 0 1-1.5V3h4v.2a1.6 1.6 0 0 0 1 1.5 1.6 1.6 0 0 0 1.8-.3l.1-.1 2.8 2.8-.1.1a1.6 1.6 0 0 0-.3 1.8 1.6 1.6 0 0 0 1.5 1h.2v4h-.2a1.6 1.6 0 0 0-1.3 1z"/></svg><span>Settings</span></button>
 </nav>
 <script src="native.js" defer></script>
-<script src="pilotlog-16.9.js" defer></script>
+<script src="pilotlog-16.11.js" defer></script>
 <dialog id="rosterScreenshotDialog" aria-labelledby="rosterScreenshotTitle" style="width:min(94vw,820px);max-height:90vh;overflow:auto;border:1px solid #555;border-radius:16px;padding:20px;background:#fff;color:#111827">
 <h2 id="rosterScreenshotTitle">Entry from screenshots</h2>
 <p>Select Flight Info and Crew screenshots. Review the entries before adding them to your roster.</p>
@@ -549,7 +549,7 @@
   <div id="payslipPageControls" class="actions"><button id="payslipPrev" type="button" class="secondary">Previous</button><span id="payslipPage"></span><button id="payslipNext" type="button" class="secondary">Next</button></div>
   <div id="payslipPreviewContent"></div><details><summary>Read text</summary><pre id="payslipViewerText"></pre></details></div>
 </div>
-<script type="module">import {initializePayslips} from './payslips.mjs?v=16.9';initializePayslips();</script>
+<script type="module">import {initializePayslips} from './payslips.mjs?v=16.11';initializePayslips();</script>
 <dialog id="tripConflictDialog" aria-labelledby="tripConflictTitle"><h3 id="tripConflictTitle">Review Trip versions</h3><p id="tripConflictId"></p><div id="tripConflictComparison"></div><form method="dialog" class="actions"><button class="secondary" value="later" autofocus>Decide later</button><button class="secondary" value="local">Use this device</button><button class="primary" value="central">Use cloud</button></form></dialog>
 <dialog id="integrityDialog"><h3>Data Integrity Check</h3><div id="integrityIssueList"></div><button type="button" id="integrityClose">Close</button></dialog>
 </body></html>
