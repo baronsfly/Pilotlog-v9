@@ -12,7 +12,7 @@
 <link rel="apple-touch-icon" sizes="180x180" href="nexa-apple-touch-icon-180.png">
 <link rel="icon" type="image/png" sizes="192x192" href="nexa-icon-192.png">
 <link rel="icon" type="image/png" sizes="512x512" href="nexa-icon-512.png">
-<link rel="stylesheet" href="pilotlog-16.8.css">
+<link rel="stylesheet" href="pilotlog-16.9.css">
 </head>
 <body>
 <header>
@@ -31,7 +31,7 @@
         <p id="appTagline">PilotLog — your personal LogBook</p>
       </div>
     </div>
-    <span class="version-badge">16.8</span>
+    <span class="version-badge">16.9</span>
   </div>
 </header>
 <main>
@@ -346,15 +346,10 @@
     <div class="actions"><button class="primary" id="saveTimeGroupSettings" type="button">Save Time Groups</button></div>
   </div>
   </details>
-  <details class="settings-group" name="pilotlog-settings" data-settings-group="import-export">
-    <summary>Import / Export</summary>
-  <div class="card">
-    <label class="filebtn secondary" for="aerolineRosterFile">Monthly Roster Import</label>
-    <input id="aerolineRosterFile" type="file" accept=".json,application/json,text/json" class="hidden">
-    <div id="aerolineImportStatus" class="hint" role="status"></div>
-    <div class="section-title inner">Import from Screenshot</div>
-    <div class="hint">Choose a roster, LogTen or generic operational screenshot. PilotLog performs OCR in your browser, then shows an editable review. Nothing is saved until you press <b>Import Reviewed</b>.</div>
-    <div class="form-grid screenshot-import-controls">
+<details class="settings-group" name="pilotlog-settings" data-settings-group="import-export"><summary>Import / Export</summary>
+<details class="settings-submenu"><summary>Import</summary>
+<label class="filebtn secondary" for="aerolineRosterFile">Monthly Roster Import</label><input id="aerolineRosterFile" type="file" accept=".json,application/json,text/json" class="hidden"><div id="aerolineImportStatus" class="hint" role="status"></div><details class="settings-submenu"><summary>Import from Screenshot</summary>
+<div class="hint">Choose a roster, LogTen or generic operational screenshot. PilotLog performs OCR in your browser, then shows an editable review. Nothing is saved until you press <b>Import Reviewed</b>.</div><div class="form-grid screenshot-import-controls">
       <div>
         <label>Screenshot type</label>
         <select id="screenshotSource">
@@ -376,19 +371,15 @@
         <label class="filebtn primary screenshot-filebtn" for="screenshotFile">Choose Screenshot</label>
         <input id="screenshotFile" type="file" accept="image/*" class="hidden">
       </div>
-    </div>
-    <div id="screenshotImportStatus" class="hint">No screenshot selected.</div>
-    <div id="screenshotPreviewWrap" class="screenshot-preview-wrap hidden">
+    </div><div id="screenshotImportStatus" class="hint">No screenshot selected.</div><div id="screenshotPreviewWrap" class="screenshot-preview-wrap hidden">
       <img id="screenshotPreview" alt="Screenshot preview">
-    </div>
-    <div id="screenshotOcrWrap" class="hidden">
+    </div><div id="screenshotOcrWrap" class="hidden">
       <label>Recognized text — editable</label>
       <textarea id="screenshotOcrText" class="screenshot-ocr-text" placeholder="OCR text will appear here. You can correct it before parsing."></textarea>
       <div class="actions">
         <button class="secondary" id="parseScreenshotText" type="button">Parse / Re-parse</button>
       </div>
-    </div>
-    <div id="screenshotReviewWrap" class="hidden">
+    </div><div id="screenshotReviewWrap" class="hidden">
       <div class="section-title inner">Review Import</div>
       <div class="hint">PilotLog fills what it can read. Yellow fields need your confirmation or completion. If a roster cell cannot be interpreted it is kept as <b>To complete</b> with the original OCR text in Remarks. Nothing incomplete is imported until you complete it or uncheck that row.</div>
       <div id="screenshotReviewSummary" class="screenshot-review-summary"></div>
@@ -405,12 +396,36 @@
         <button class="secondary" id="clearScreenshotReview" type="button">Clear Review</button>
       </div>
     </div>
-  </div>
+</details>
+<label class="filebtn primary" for="logTenFullFile">Import Complete LogTen Logbook</label><input id="logTenFullFile" type="file" multiple accept=".pilotlog-logten,.sql,.sql-wal,.sql-shm,application/octet-stream" class="hidden"><label class="filebtn secondary" for="logTenFile">Import LogTen Tab</label><input id="logTenFile" type="file" accept=".txt,.tsv,text/plain,text/tab-separated-values" class="hidden"><div class="hint" id="logTenImportStatus">Complete migration imports the usable logbook fields and keeps the original LogTen SQLite database byte-for-byte in local archive storage. Flight Credit H is always calculated from Scheduled Block Hours; imported LogTen Custom Time does not override it. The archive is not uploaded to Cloud Sync.</div><label class="filebtn primary" for="calendarFile">Import Calendar (.ics)</label><input id="calendarFile" type="file" accept=".ics,text/calendar" class="hidden"><div class="hint" id="calendarImportStatus">No calendar imported yet.</div><label class="filebtn secondary" for="rosterFile">Import roster CSV</label><input id="rosterFile" type="file" accept=".csv,text/csv" class="hidden">
+</details>
+<details class="settings-submenu"><summary>Export</summary>
+<button class="secondary" id="exportRoster">Export roster CSV</button>
+<button class="secondary" id="exportCsv">Export Operational CSV</button>
+<button class="secondary" id="exportLogTenArchive" type="button">Export archived LogTen database</button>
+<button class="secondary" id="exportLogTen">Export for LogTen Pro</button>
+<div class="hint" id="logTenArchiveStatus">No complete LogTen database archived yet.</div>
+</details>
+<details class="settings-submenu"><summary>Backup &amp; Restore</summary>
+<button class="secondary" id="exportBackupJson" type="button">Export Full Backup JSON</button><label class="filebtn secondary" for="restoreBackupJsonFile">Restore Full Backup JSON</label><input id="restoreBackupJsonFile" type="file" accept=".json,application/json" class="hidden">
+</details>
+<details class="settings-submenu"><summary>Data Integrity</summary>
+<button class="secondary" id="runIntegrityCheckBtn" type="button">Run Data Integrity Check</button>
+<div class="sync-status" id="integrityStatus">Not checked yet.</div>
+<div id="integrityResults" class="hint spaced"></div><button type="button" id="reviewDuplicates">Review Possible Duplicates</button><details class="settings-submenu"><summary>Review Ambiguous Flight Links</summary>
+<div id="reconciliationReview" class="hint spaced"></div>
+</details>
+<details class="settings-submenu"><summary>Data Maintenance</summary>
+<button class="danger" id="clearRoster" type="button">Clear roster</button>
+<button class="danger" id="deleteAll" type="button">Delete all entries</button><div class="hint">Clear roster removes the complete imported/planned roster, including OFF, DHD/DHP, standby and training activities, while preserving locked Logbook entries. Delete all entries removes the saved log entries. If Cloud Sync is enabled, the deletion is remembered on this device and propagated to your other devices at the next Sync; deleted records should not return.</div>
+</details>
 
-  <div class="card spaced">
-    <div class="section-title inner">Professional Experience / Logbook</div>
-    <div class="hint">Experience exports are independent from Payroll. DHD, STBY and Ground Course are excluded from the professional flight logbook.</div>
-    <div class="form-grid logbook-export-grid">
+</details>
+
+</details>
+<details class="settings-group" name="pilotlog-settings" data-settings-group="experience"><summary>Professional Experience</summary>
+<details class="settings-submenu"><summary>EASA Logbook PDF</summary>
+<div class="form-grid logbook-export-grid">
       <div>
         <label>EASA-style PDF selection</label>
         <select id="easaExportMode">
@@ -425,31 +440,13 @@
       <div><label>From</label><input id="easaFrom" type="date"></div>
       <div><label>To</label><input id="easaTo" type="date"></div>
       <div><label>FSTD / Simulator</label><select id="easaIncludeSim"><option value="yes">Include in EASA pages</option><option value="no">Exclude</option></select></div>
-    </div>
-    <div class="actions">
-      <button class="primary" id="exportEasaPdf" type="button">Export EASA-style PDF</button>
-      <button class="secondary" id="exportExperiencePdf" type="button">Export Experience PDF</button>
-      <button class="secondary" id="exportBackupJson" type="button">Export Full Backup JSON</button>
-      <label class="filebtn secondary" for="restoreBackupJsonFile">Restore Full Backup JSON</label><input id="restoreBackupJsonFile" type="file" accept=".json,application/json" class="hidden">
-    </div>
-    <div class="hint">PilotLog generates a real A4 portrait PDF. Open/share the PDF directly; browser print scaling is not used. “Last pages” exports complete logbook pages with carried-forward totals.</div>
-    <div class="section-title inner">LogTen Pro</div>
-    <div class="actions top">
-      <label class="filebtn primary" for="logTenFullFile">Import complete LogTen migration</label><input id="logTenFullFile" type="file" multiple accept=".pilotlog-logten,.sql,.sql-wal,.sql-shm,application/octet-stream" class="hidden">
-      <label class="filebtn secondary" for="logTenFile">Import LogTen Tab</label><input id="logTenFile" type="file" accept=".txt,.tsv,text/plain,text/tab-separated-values" class="hidden">
-      <button class="secondary" id="exportLogTenArchive" type="button">Export archived LogTen database</button>
-      <button class="secondary" id="exportCsv">Export Operational CSV</button><button class="secondary" id="exportLogTen">Export for LogTen Pro</button>
-    </div>
-    <div class="hint" id="logTenImportStatus">Complete migration imports the usable logbook fields and keeps the original LogTen SQLite database byte-for-byte in local archive storage. Flight Credit H is always calculated from Scheduled Block Hours; imported LogTen Custom Time does not override it. The archive is not uploaded to Cloud Sync.</div>
-    <div class="hint" id="logTenArchiveStatus">No complete LogTen database archived yet.</div>
-    <div class="section-title inner">Duty / Roster</div>
-    <div class="actions"><label class="filebtn primary" for="calendarFile">Import Calendar (.ics)</label><input id="calendarFile" type="file" accept=".ics,text/calendar" class="hidden"><label class="filebtn secondary" for="rosterFile">Import roster CSV</label><input id="rosterFile" type="file" accept=".csv,text/csv" class="hidden"><button class="secondary" id="exportRoster">Export roster CSV</button></div>
-    <div class="hint" id="calendarImportStatus">No calendar imported yet.</div>
-    <div class="section-title inner">Data maintenance</div>
-    <div class="actions"><button class="danger" id="clearRoster" type="button">Clear roster</button><button class="danger" id="deleteAll" type="button">Delete all entries</button></div>
-    <div class="hint">Clear roster removes the complete imported/planned roster, including OFF, DHD/DHP, standby and training activities, while preserving locked Logbook entries. Delete all entries removes the saved log entries. If Cloud Sync is enabled, the deletion is remembered on this device and propagated to your other devices at the next Sync; deleted records should not return.</div>
-  </div>
-  </details>
+    </div><button class="primary" id="exportEasaPdf" type="button">Export EASA-style PDF</button>
+</details>
+<details class="settings-submenu"><summary>Experience PDF</summary>
+<button class="secondary" id="exportExperiencePdf" type="button">Export Experience PDF</button>
+</details>
+
+</details>
   <details class="settings-group" name="pilotlog-settings" data-settings-group="payroll">
     <summary>Payroll Settings</summary>
   <div class="card"><form id="paySettingsForm">
@@ -517,16 +514,7 @@
     <div id="syncState" role="status"></div><details><summary>Sync Log</summary><pre id="syncLog"></pre></details><button class="primary" id="syncCloudBtn" type="button">Sync now</button><button class="danger" id="deepResetBtn" type="button">Erase Old Database • Start Clean</button><button class="secondary" id="deepLocalResetBtn" type="button">Reset Local Cache Only</button></div>
   </div>
   </details>
-  <details class="settings-group" name="pilotlog-settings" data-settings-group="integrity">
-    <summary>Data Integrity Check</summary>
-  <div class="card">
-    <div class="hint">Checks AeroLINE roster flight sectors against the Logbook. Manual, simulator and other-company entries are allowed and are not treated as errors just because they are absent from the roster.</div>
-    <div class="actions"><button class="secondary" id="runIntegrityCheckBtn" type="button">Review Roster, Logbook and Trips</button></div>
-    <div class="sync-status" id="integrityStatus">Not checked yet.</div>
-    <div id="integrityResults" class="hint spaced"></div>
-    <div id="reconciliationReview" class="hint spaced"></div>
-  </div>
-  </details>
+
   </section>
 
 <div id="importProgressModal" class="import-progress-modal hidden" role="dialog" aria-modal="true" aria-labelledby="importProgressTitle">
@@ -549,7 +537,7 @@
   <button data-view="settingsView"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1-2.8 2.8-.1-.1a1.6 1.6 0 0 0-1.8-.3 1.6 1.6 0 0 0-1 1.5V21h-4v-.2a1.6 1.6 0 0 0-1-1.5 1.6 1.6 0 0 0-1.8.3l-.1.1-2.8-2.8.1-.1A1.6 1.6 0 0 0 4.6 15a1.6 1.6 0 0 0-1.5-1H3v-4h.1a1.6 1.6 0 0 0 1.5-1 1.6 1.6 0 0 0-.3-1.8l-.1-.1 2.8-2.8.1.1a1.6 1.6 0 0 0 1.8.3 1.6 1.6 0 0 0 1-1.5V3h4v.2a1.6 1.6 0 0 0 1 1.5 1.6 1.6 0 0 0 1.8-.3l.1-.1 2.8 2.8-.1.1a1.6 1.6 0 0 0-.3 1.8 1.6 1.6 0 0 0 1.5 1h.2v4h-.2a1.6 1.6 0 0 0-1.3 1z"/></svg><span>Settings</span></button>
 </nav>
 <script src="native.js" defer></script>
-<script src="pilotlog-16.8.js" defer></script>
+<script src="pilotlog-16.9.js" defer></script>
 <dialog id="rosterScreenshotDialog" aria-labelledby="rosterScreenshotTitle" style="width:min(94vw,820px);max-height:90vh;overflow:auto;border:1px solid #555;border-radius:16px;padding:20px;background:#fff;color:#111827">
 <h2 id="rosterScreenshotTitle">Entry from screenshots</h2>
 <p>Select Flight Info and Crew screenshots. Review the entries before adding them to your roster.</p>
@@ -561,7 +549,7 @@
   <div id="payslipPageControls" class="actions"><button id="payslipPrev" type="button" class="secondary">Previous</button><span id="payslipPage"></span><button id="payslipNext" type="button" class="secondary">Next</button></div>
   <div id="payslipPreviewContent"></div><details><summary>Read text</summary><pre id="payslipViewerText"></pre></details></div>
 </div>
-<script type="module">import {initializePayslips} from './payslips.mjs?v=16.8';initializePayslips();</script>
+<script type="module">import {initializePayslips} from './payslips.mjs?v=16.9';initializePayslips();</script>
 <dialog id="tripConflictDialog" aria-labelledby="tripConflictTitle"><h3 id="tripConflictTitle">Review Trip versions</h3><p id="tripConflictId"></p><div id="tripConflictComparison"></div><form method="dialog" class="actions"><button class="secondary" value="later" autofocus>Decide later</button><button class="secondary" value="local">Use this device</button><button class="primary" value="central">Use cloud</button></form></dialog>
 <dialog id="integrityDialog"><h3>Data Integrity Check</h3><div id="integrityIssueList"></div><button type="button" id="integrityClose">Close</button></dialog>
 </body></html>
